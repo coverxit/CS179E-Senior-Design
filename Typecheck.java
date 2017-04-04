@@ -1,6 +1,6 @@
 public class Typecheck {
     public static void main(String[] args) throws ParseException {
-		// According to the instruction: "java Typecheck < P.java"
+        // According to the instruction: "java Typecheck < P.java"
         // We use `System.in` as the input stream.
         try {
             new MiniJavaParser(System.in);
@@ -10,5 +10,5 @@ public class Typecheck {
         } catch (ParseException e) {
             System.out.println("Type error");
         }
-	}
+    }
 }
