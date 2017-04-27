@@ -11,9 +11,9 @@ class HelperException extends Exception {
 
 class MethodType {
     private final ArrayList<String> parameters;
-    private final String returnType;
+    private final ExpressionType returnType;
 
-    public MethodType(ArrayList<String> p, String rt) {
+    public MethodType(ArrayList<String> p, ExpressionType rt) {
         parameters = new ArrayList<>(p);
         returnType = rt;
     }
@@ -22,7 +22,7 @@ class MethodType {
         return parameters;
     }
 
-    public String getReturnType() {
+    public ExpressionType getReturnType() {
         return returnType;
     }
 
@@ -37,84 +37,57 @@ class MethodType {
     }
 }
 
+class ExpressionType {
+    private final Node node;
+    private final String type;
+
+    public ExpressionType(Node n, String t) {
+        node = n;
+        type = t;
+    }
+
+    public Node getNode() {
+        return node;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || !(obj instanceof ExpressionType))
+            return false;
+
+        ExpressionType rhs = (ExpressionType) obj;
+        return rhs.type.equals(this.type);
+    }
+}
+
+class SubtypingRelation {
+    private static Map<Symbol, Set<Symbol>> relation = new LinkedHashMap<>();
+
+    public static void insert(Symbol base, Symbol child) {
+        relation.putIfAbsent(base, new HashSet<>());
+
+        // Subtyping is transitive
+        for (Iterator<Symbol> it = relation.keySet().iterator(); it.hasNext(); ) {
+            Set<Symbol> children = relation.get(it.next());
+            // Since subtyping is reflexive, child can be inserted into base.
+            if (children.contains(base))
+                children.add(child);
+        }
+    }
+
+    public static boolean isSubtyping(Symbol child, Symbol base) {
+        if (relation.containsKey(base))
+            return relation.get(base).contains(child);
+        else
+            return false;
+    }
+}
+
 class Helper {
-    public static String className(Node c) throws HelperException {
-        if (c instanceof MainClass) {
-            /*
-             * Grammar production:
-             * f0 -> "class"
-             * f1 -> Identifier()
-             * f2 -> "{"
-             * f3 -> "public"
-             * f4 -> "static"
-             * f5 -> "void"
-             * f6 -> "main"
-             * f7 -> "("
-             * f8 -> "String"
-             * f9 -> "["
-             * f10 -> "]"
-             * f11 -> Identifier()
-             * f12 -> ")"
-             * f13 -> "{"
-             * f14 -> ( VarDeclaration() )*
-             * f15 -> ( Statement() )*
-             * f16 -> "}"
-             * f17 -> "}"
-             */
-            return ((MainClass) c).f1.f0.tokenImage;
-        } else if (c instanceof ClassDeclaration) {
-            /*
-             * Grammar production:
-             * f0 -> "class"
-             * f1 -> Identifier()
-             * f2 -> "{"
-             * f3 -> ( VarDeclaration() )*
-             * f4 -> ( MethodDeclaration() )*
-             * f5 -> "}"
-             */
-            return ((ClassDeclaration) c).f1.f0.tokenImage;
-        } else if (c instanceof ClassExtendsDeclaration) {
-            /*
-             * Grammar production:
-             * f0 -> "class"
-             * f1 -> Identifier()
-             * f2 -> "extends"
-             * f3 -> Identifier()
-             * f4 -> "{"
-             * f5 -> ( VarDeclaration() )*
-             * f6 -> ( MethodDeclaration() )*
-             * f7 -> "}"
-             */
-            return ((ClassExtendsDeclaration) c).f1.f0.tokenImage;
-        } else {
-            throw new HelperException("Type mismatch");
-        }
-    }
-
-    public static String methodName(Node m) throws HelperException {
-        if (m instanceof MethodDeclaration) {
-            /*
-             * Grammar production:
-             * f0 -> "public"
-             * f1 -> Type()
-             * f2 -> Identifier()
-             * f3 -> "("
-             * f4 -> ( FormalParameterList() )?
-             * f5 -> ")"
-             * f6 -> "{"
-             * f7 -> ( VarDeclaration() )*
-             * f8 -> ( Statement() )*
-             * f9 -> "return"
-             * f10 -> Expression()
-             * f11 -> ";"
-             * f12 -> "}"
-             */
-            return ((MethodDeclaration) m).f2.f0.tokenImage;
-        } else {
-            throw new HelperException("Type mismatch");
-        }
-    }
-
     public static boolean parameterDistinct(FormalParameterList fpl) {
         // Check if FormalParameterList() are pairwise distinct
         Set<String> declared = new HashSet<>();
@@ -261,7 +234,6 @@ class Helper {
 
     public static MethodType methodType(MethodDeclaration m) {
         ArrayList<String> params = new ArrayList<>();
-        String retType;
 
         /*
          * Grammar production:
@@ -306,6 +278,16 @@ class Helper {
             }
         }
 
+        return new MethodType(params, Helper.expressionType(m.f1));
+    }
+
+    public static final String INT_ARRAY = "int[]";
+    public static final String BOOLEAN = "boolean";
+    public static final String INT = "int";
+
+    public static ExpressionType expressionType(Type t) {
+        String retType;
+
         /*
          * Grammar production:
          * f0 -> ArrayType()
@@ -313,17 +295,17 @@ class Helper {
          *       | IntegerType()
          *       | Identifier()
          */
-        NodeChoice c = m.f1.f0;
+        NodeChoice c = t.f0;
         if (c.which == 0)
-            retType = "int[]";
+            retType = Helper.INT_ARRAY;
         else if (c.which == 1)
-            retType = "boolean";
+            retType = Helper.BOOLEAN;
         else if (c.which == 2)
-            retType = "int";
+            retType = Helper.INT;
         else // c.which == 3
             retType = ((Identifier) c.choice).f0.tokenImage;
 
-        return new MethodType(params, retType);
+        return new ExpressionType(c.choice, retType);
     }
 }
 
@@ -343,6 +325,20 @@ class Symbol {
     public static Symbol fromString(String n) {
         return dict.computeIfAbsent(n, k -> new Symbol(k));
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || !(obj instanceof Symbol))
+            return false;
+
+        Symbol rhs = (Symbol) obj;
+        return rhs.name.equals(this.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
 }
 
 class Binder {
@@ -350,10 +346,10 @@ class Binder {
     private Node type;
     private Scope scope;
 
-    public Binder(Symbol sy, Node t, Scope sc) {
+    public Binder(Symbol sy, Node t, Scope nsc) {
         symbol = sy;
         type = t;
-        scope = sc;
+        scope = nsc;
     }
 
     public Symbol getSymbol() {
@@ -480,6 +476,8 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
     @Override
     public void visit(MainClass n, Scope s) {
         Symbol id = Symbol.fromString(n.f1.f0.tokenImage);
+        SubtypingRelation.insert(id, id); // Reflexive
+
         Scope ns = new Scope(s);
         s.add(id, n, ns);
 
@@ -506,6 +504,8 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
     @Override
     public void visit(ClassDeclaration n, Scope s) {
         Symbol id = Symbol.fromString(n.f1.f0.tokenImage);
+        SubtypingRelation.insert(id, id);
+
         Scope ns = new Scope(s);
         s.add(id, n, ns);
 
@@ -538,26 +538,32 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
     @Override
     public void visit(ClassExtendsDeclaration n, Scope s) {
         Symbol id = Symbol.fromString(n.f1.f0.tokenImage);
+        SubtypingRelation.insert(id, id);
+
         Symbol base = Symbol.fromString(n.f3.f0.tokenImage);
         Binder b = s.lookup(base);
-        if (b == null) // Oh oh!
-            throw new Error("Symbol doesn't exist");
+        if (b != null) {
+            SubtypingRelation.insert(base, id);
 
-        Scope ns = new Scope(b.getScope());
-        s.add(id, n, ns);
+            Scope ns = new Scope(b.getScope());
+            s.add(id, n, ns);
 
-        // distinct(id1,...,idf)
-        if (Helper.variableDistinct(n.f5)) {
-            n.f5.accept(this, ns);
+            // distinct(id1,...,idf)
+            if (Helper.variableDistinct(n.f5)) {
+                n.f5.accept(this, ns);
 
-            // distinct(methodname(m1),...methodname(mk))
-            if (Helper.methodDistinct(n.f6))
-                n.f6.accept(this, ns);
-            else
-                ErrorMessage.complain("Overloading is not allowed. " +
+                // distinct(methodname(m1),...methodname(mk))
+                if (Helper.methodDistinct(n.f6))
+                    n.f6.accept(this, ns);
+                else
+                    ErrorMessage.complain("Overloading is not allowed. " +
+                            "In class " + id.toString());
+            } else {
+                ErrorMessage.complain("Variable identifiers are not pairwise distinct. " +
                         "In class " + id.toString());
+            }
         } else {
-            ErrorMessage.complain("Variable identifiers are not pairwise distinct. " +
+            ErrorMessage.complain("Base class '" + base.toString() + "' is not defined. " +
                     "In class " + id.toString());
         }
     }
@@ -630,8 +636,211 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
     }
 }
 
-class SecondPhaseVisitor extends GJDepthFirst<Node, Scope> {
+/**
+ * The second pass checks return value of methods, and checks statements, expressions and primary expressions.
+ */
 
+class SecondPhaseVisitor extends GJDepthFirst<Node, Scope> {
+    /*
+     * f0 -> "class"
+     * f1 -> Identifier()
+     * f2 -> "{"
+     * f3 -> "public"
+     * f4 -> "static"
+     * f5 -> "void"
+     * f6 -> "main"
+     * f7 -> "("
+     * f8 -> "String"
+     * f9 -> "["
+     * f10 -> "]"
+     * f11 -> Identifier()
+     * f12 -> ")"
+     * f13 -> "{"
+     * f14 -> ( VarDeclaration() )*
+     * f15 -> ( Statement() )*
+     * f16 -> "}"
+     * f17 -> "}"
+     */
+    @Override
+    public Node visit(MainClass n, Scope s) {
+        Symbol id = Symbol.fromString(n.f1.f0.tokenImage);
+        Binder b = s.lookup(id);
+
+        n.f15.accept(this, b.getScope());
+        return null;
+    }
+
+    /*
+     * f0 -> "class"
+     * f1 -> Identifier()
+     * f2 -> "{"
+     * f3 -> ( VarDeclaration() )*
+     * f4 -> ( MethodDeclaration() )*
+     * f5 -> "}"
+     */
+    @Override
+    public Node visit(ClassDeclaration n, Scope s) {
+        Symbol id = Symbol.fromString(n.f1.f0.tokenImage);
+        Binder b = s.lookup(id);
+
+        n.f4.accept(this, b.getScope());
+        return null;
+    }
+
+    /*
+     * f0 -> "class"
+     * f1 -> Identifier()
+     * f2 -> "extends"
+     * f3 -> Identifier()
+     * f4 -> "{"
+     * f5 -> ( VarDeclaration() )*
+     * f6 -> ( MethodDeclaration() )*
+     * f7 -> "}"
+     */
+    @Override
+    public Node visit(ClassExtendsDeclaration n, Scope s) {
+        Symbol id = Symbol.fromString(n.f1.f0.tokenImage);
+        Binder b = s.lookup(id);
+
+        n.f6.accept(this, b.getScope());
+        return null;
+    }
+
+    /*
+     * f0 -> "public"
+     * f1 -> Type()
+     * f2 -> Identifier()
+     * f3 -> "("
+     * f4 -> ( FormalParameterList() )?
+     * f5 -> ")"
+     * f6 -> "{"
+     * f7 -> ( VarDeclaration() )*
+     * f8 -> ( Statement() )*
+     * f9 -> "return"
+     * f10 -> Expression()
+     * f11 -> ";"
+     * f12 -> "}"
+     */
+    @Override
+    public Node visit(MethodDeclaration n, Scope s) {
+        Symbol id = Symbol.fromString(n.f2.f0.tokenImage);
+        Binder b = s.lookup(id);
+        Scope ns = b.getScope();
+
+        n.f8.accept(this, ns);
+
+        // Check return value type
+        // A,C |- e:t
+        Type retType = (Type) n.f10.accept(this, ns);
+        if (!Helper.expressionType(n.f1).equals(Helper.expressionType(retType))) {
+            ErrorMessage.complain("Return type mismatch. " +
+                    "In method: " + id.toString());
+        }
+        return null;
+    }
+
+    /*
+     * f0 -> Identifier()
+     * f1 -> "="
+     * f2 -> Expression()
+     * f3 -> ";"
+     */
+    @Override
+    public Node visit(AssignmentStatement n, Scope s) {
+        Symbol id = Symbol.fromString(n.f0.f0.tokenImage);
+        Binder b = s.lookup(id);
+
+        // A(id) = t1
+        if (b != null) {
+            ExpressionType idt = Helper.expressionType((Type) b.getType());
+            Type rhs = (Type) n.f2.accept(this, s);
+
+            // A,C |- e:t2
+            if (rhs != null) {
+                ExpressionType et = Helper.expressionType(rhs);
+
+                // t2 <= t1
+                if (!idt.equals(et)) {
+                    // if idtn and etn are both classes
+                    if ((idt.getNode() instanceof Identifier) && (et.getNode() instanceof Identifier)) {
+                        if (SubtypingRelation.isSubtyping(Symbol.fromString(et.getType()),
+                                Symbol.fromString(idt.getType()))) {
+
+                        }
+                    } else {
+                        ErrorMessage.complain("Assignment type mismatch. " +
+                                "LHS: " + idt.getType() + ", RHS: " + et.getType());
+                    }
+                }
+            } else {
+                ErrorMessage.complain("Assignment: RHS type undefined.");
+            }
+        } else {
+            ErrorMessage.complain("Assignment: Identifier is not defined. " +
+                    "Identifier: " + id.toString());
+        }
+
+        return null;
+    }
+
+    /*
+     * f0 -> Identifier()
+     * f1 -> "["
+     * f2 -> Expression()
+     * f3 -> "]"
+     * f4 -> "="
+     * f5 -> Expression()
+     * f6 -> ";"
+     */
+    @Override
+    public Node visit(ArrayAssignmentStatement n, Scope s) {
+        Symbol id = Symbol.fromString(n.f0.f0.tokenImage);
+        Binder b = s.lookup(id);
+
+        // A(id) = int[]
+        if (b != null) {
+            ExpressionType idt = Helper.expressionType((Type) b.getType());
+
+            if (idt.getType().equals(Helper.INT_ARRAY)) {
+                Type index = (Type) n.f2.accept(this, s);
+
+                // A,C |- e1:int
+                if (index != null) {
+                    ExpressionType indext = Helper.expressionType(index);
+
+                    if (indext.getType().equals(Helper.INT)) {
+                        Type rhs = (Type) n.f5.accept(this, s);
+
+                        // A,C |- e2: int
+                        if (rhs != null) {
+                            ExpressionType et = Helper.expressionType(rhs);
+
+                            if (!et.getType().equals(Helper.INT)) {
+                                ErrorMessage.complain("ArrayAssignment: RHS type mismatch. " +
+                                        "RHS: " + et.getType());
+                            }
+                        } else {
+                            ErrorMessage.complain("ArrayAssignment: RHS type undefined.");
+                        }
+                    } else {
+                        ErrorMessage.complain("ArrayAssignment: Index type mismatch. " +
+                                "Type: " + indext.getType());
+                    }
+                } else {
+                    ErrorMessage.complain("ArrayAssignment: Index type undefined.");
+                }
+
+            } else {
+                ErrorMessage.complain("ArrayAssignment: Identifier (LHS) type mismatch. " +
+                        "Type: " + idt.getType());
+            }
+        } else {
+            ErrorMessage.complain("ArrayAssignment: Identifier is not defined. " +
+                    "Identifier: " + id.toString());
+        }
+
+        return null;
+    }
 }
 
 public class Typecheck {
