@@ -341,8 +341,7 @@ class Symbol {
     }
 
     public static Symbol fromString(String n) {
-        String u = n.intern();
-        return dict.putIfAbsent(u, new Symbol(u));
+        return dict.computeIfAbsent(n, k -> new Symbol(k));
     }
 }
 
