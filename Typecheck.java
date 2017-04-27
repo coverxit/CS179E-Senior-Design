@@ -1,10 +1,91 @@
 import syntaxtree.*;
 import visitor.*;
+
+import java.lang.reflect.Method;
 import java.util.*;
+
+final class Helper {
+    public static Identifier getClassName(Node c) {
+        if (c instanceof MainClass) {
+            /*
+             * Grammar production:
+             * f0 -> "class"
+             * f1 -> Identifier()
+             * f2 -> "{"
+             * f3 -> "public"
+             * f4 -> "static"
+             * f5 -> "void"
+             * f6 -> "main"
+             * f7 -> "("
+             * f8 -> "String"
+             * f9 -> "["
+             * f10 -> "]"
+             * f11 -> Identifier()
+             * f12 -> ")"
+             * f13 -> "{"
+             * f14 -> ( VarDeclaration() )*
+             * f15 -> ( Statement() )*
+             * f16 -> "}"
+             * f17 -> "}"
+             */
+            return ((MainClass) c).f1;
+        } else if (c instanceof ClassDeclaration) {
+            /*
+             * Grammar production:
+             * f0 -> "class"
+             * f1 -> Identifier()
+             * f2 -> "{"
+             * f3 -> ( VarDeclaration() )*
+             * f4 -> ( MethodDeclaration() )*
+             * f5 -> "}"
+             */
+            return ((ClassDeclaration) c).f1;
+        } else if (c instanceof ClassExtendsDeclaration) {
+            /*
+             * Grammar production:
+             * f0 -> "class"
+             * f1 -> Identifier()
+             * f2 -> "extends"
+             * f3 -> Identifier()
+             * f4 -> "{"
+             * f5 -> ( VarDeclaration() )*
+             * f6 -> ( MethodDeclaration() )*
+             * f7 -> "}"
+             */
+            return ((ClassExtendsDeclaration) c).f1;
+        } else {
+            return null;
+        }
+    }
+
+    public static Identifier getMethodName(Node c) {
+        if (c instanceof MethodDeclaration) {
+            /*
+             * Grammar production:
+             * f0 -> "public"
+             * f1 -> Type()
+             * f2 -> Identifier()
+             * f3 -> "("
+             * f4 -> ( FormalParameterList() )?
+             * f5 -> ")"
+             * f6 -> "{"
+             * f7 -> ( VarDeclaration() )*
+             * f8 -> ( Statement() )*
+             * f9 -> "return"
+             * f10 -> Expression()
+             * f11 -> ";"
+             * f12 -> "}"
+             */
+            return ((MethodDeclaration) c).;
+        } else {
+            return null;
+        }
+    }
+}
 
 class Symbol {
 	private String name;
-	private static Dictionary<String, Symbol> dict = new Hashtable<String, Symbol>();
+	private static Map<String, Symbol> dict = new HashMap<String, Symbol>();
 	
 	private Symbol(String n) {
 		name = n;
@@ -17,7 +98,7 @@ class Symbol {
 	
 	public static Symbol fromString(String n) {
 		String u = n.intern();
-		Symbol s = (Symbol) dict.get(u);
+		Symbol s = dict.get(u);
 		
 		if (s == null) {
 			s = new Symbol(u);
@@ -29,83 +110,76 @@ class Symbol {
 
 class Binder {
 	private Symbol symbol;
-	private String type;
+	private Node type;
+    private Scope scope;
 	
-	public Binder(Symbol s, String t) {
-		symbol = s; type = t;
+	public Binder(Symbol sy, Node t, Scope sc) {
+		symbol = sy; type = t; scope = sc;
 	}
 	
 	public Symbol getSymbol() {
 		return symbol;
 	}
 	
-	public String getType() {
+	public Node getType() {
 		return type;
 	}
+
+	public Scope getScope() { return scope; }
 }
 
-class Bucket {
-	private Symbol key;
-	private Binder binding;
-	private Bucket next;
-	
-	public Bucket(Symbol k, Binder b, Bucket n) {
-		key = k; binding = b; next = n;
-	}
-	
-	public Symbol getKey() { 
-		return key; 
-	}
-	
-	public Binder getBinding() {
-		return binding;
-	}
-	
-	public Bucket getNext() {
-		return next;
-	}
-}
-
-class Environment
+class Scope
 {
-	private static Dictionary<Symbol, Bucket> table = new Hashtable<Symbol, Bucket>();
-	private static Stack<Stack<Symbol>> scope = new Stack<Stack<Symbol>>();
+	private Map<Symbol, Binder> table = new HashMap<Symbol, Binder>();
 	
-	public static void push(Symbol s, Binder b) {
-		table.put(s, new Bucket(s, b, table.get(s)));
-		
-		if (!scope.empty())
-			scope.peek().push(s);
+	private Scope parent;
+	private List<Scope> children = new ArrayList<Scope>();
+	
+	public Scope() {
+		parent = null;
 	}
 	
-	public static Binder lookup(Symbol s) {
-		for (Bucket b = table.get(s); b != null; b = b.getNext())
-			if (s.equals(b.getKey()))
-				return b.getBinding();
-	
-		return null;
+	public Scope(Scope p) {
+		parent = p;
+	}
+
+	public void add(Symbol s, Node t) {
+		table.put(s, new Binder(s, t, this));
 	}
 	
-	public static void pop(Symbol s) {
-		Bucket b = table.get(s);
-		
+	public Binder lookup(Symbol s) {
+		Binder b = table.get(s);
+
 		if (b != null)
-			table.put(s, b.getNext());
+		    return b;
+		// Lookup recursively
+		else if (parent != null)
+		    return parent.lookup(s);
+		else
+		    return null;
 	}
 	
-	public static void beginScope() {
-		scope.push(new Stack<Symbol>());
+	public Scope beginScope() {
+		Scope s = new Scope(this);
+		children.add(s);
+		return s;
 	}
 	
-	public static void endScope() {
-		Stack<Symbol> stack = scope.pop();
-		while (!stack.empty())
-			Environment.pop(stack.pop());
+	public Scope endScope() {
+		return parent;
+	}
+
+	public boolean isRoot() {
+		return parent == null;
 	}
 }
 
 class ErrorMessage {
 	private static boolean errors = false;
+	
+	public static void complain() {
+		errors = true;
+	}
 	
 	public static void complain(String msg) {
 		errors = true;
@@ -117,18 +191,21 @@ class ErrorMessage {
 	}
 }
 
-class FirstPhaseVisitor extends GJVoidDepthFirst<Symbol> {
+class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
 	/**
 	 * f0 -> Type()
 	 * f1 -> Identifier()
 	 * f2 -> ";"
 	 */
 	@Override
-	public void visit(VarDeclaration n, Symbol sym) {
-		n.f0.accept(this, null);
+	public void visit(VarDeclaration n, Scope s) {
+		n.f0.accept(this, s);
 		String id = n.f1.f0.toString();
 		
 		
+		
+		n.f1.accept(this, s);
+		n.f2.accept(this, s);
 	}
 }
 
@@ -138,14 +215,16 @@ class SecondPhaseVisitor extends GJDepthFirst<String, Symbol> {
 
 public class Typecheck {
     public static void main(String[] args) throws ParseException { 
-    	// Environment env = new Environment();
+    	Scope root = new Scope();
     	
         // According to the instruction: "java Typecheck < P.java"
         // We use `System.in` as the input stream.
         try {
             new MiniJavaParser(System.in);
-            MiniJavaParser.Goal().accept(new FirstPhaseVisitor(), null);
-            MiniJavaParser.Goal().accept(new SecondPhaseVisitor(), null);
+
+            Goal program = MiniJavaParser.Goal();
+            program.accept(new FirstPhaseVisitor(), root);
+            program.accept(new SecondPhaseVisitor(), null);
             
             if (!ErrorMessage.anyErrors())
             	System.out.println("Program type checked successfully");
