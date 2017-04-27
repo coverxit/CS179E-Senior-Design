@@ -383,7 +383,9 @@ class Scope {
     }
 
     public void add(Symbol s, Node t) {
-        assert !table.containsKey(s) : "Symbol existed";
+        if (table.containsKey(s)) // Oh oh!
+            throw new Error("Symbol existed");
+
         table.put(s, new Binder(s, t, this));
     }
 
