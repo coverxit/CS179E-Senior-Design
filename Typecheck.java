@@ -517,7 +517,7 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
             if (Helper.methodDistinct(n.f4))
                 n.f4.accept(this, ns);
             else
-                ErrorMessage.complain("Method identifiers are not pairwise distinct. " +
+                ErrorMessage.complain("Overloading is not allowed. " +
                         "In class " + id.toString());
         } else {
             ErrorMessage.complain("Variable identifiers are not pairwise distinct. " +
@@ -554,7 +554,7 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
             if (Helper.methodDistinct(n.f6))
                 n.f6.accept(this, ns);
             else
-                ErrorMessage.complain("Method identifiers are not pairwise distinct. " +
+                ErrorMessage.complain("Overloading is not allowed. " +
                         "In class " + id.toString());
         } else {
             ErrorMessage.complain("Variable identifiers are not pairwise distinct. " +
@@ -588,8 +588,9 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
             MethodType base = Helper.methodType((MethodDeclaration) b.getType());
             MethodType inherit = Helper.methodType(n);
 
-            if (base.equals(inherit)) {
-                ErrorMessage.complain("Overloading is now allowed. " +
+            // Guarantee only overriding
+            if (!base.equals(inherit)) {
+                ErrorMessage.complain("Overloading is not allowed. " +
                         "Method: " + id.toString());
                 return;
             }
