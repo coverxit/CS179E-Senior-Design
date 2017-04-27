@@ -1,14 +1,44 @@
 import syntaxtree.*;
 import visitor.*;
+
+import java.lang.reflect.Array;
 import java.util.*;
 
-final class HelperException extends Exception {
+class HelperException extends Exception {
     public HelperException(String message) {
         super(message);
     }
 }
 
-final class Helper {
+class MethodType {
+    private final ArrayList<String> parameters;
+    private final String returnType;
+
+    public MethodType(ArrayList<String> p, String rt) {
+        parameters = new ArrayList<>(p);
+        returnType = rt;
+    }
+
+    public ArrayList<String> getParameters() {
+        return parameters;
+    }
+
+    public String getReturnType() {
+        return returnType;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || !(obj instanceof MethodType))
+            return false;
+
+        MethodType rhs = (MethodType) obj;
+        return rhs.parameters.equals(this.parameters)
+                && rhs.returnType.equals(this.returnType);
+    }
+}
+
+class Helper {
     public static String className(Node c) throws HelperException {
         if (c instanceof MainClass) {
             /*
@@ -32,7 +62,7 @@ final class Helper {
              * f16 -> "}"
              * f17 -> "}"
              */
-            return ((MainClass) c).f1.f0.toString();
+            return ((MainClass) c).f1.f0.tokenImage;
         } else if (c instanceof ClassDeclaration) {
             /*
              * Grammar production:
@@ -43,7 +73,7 @@ final class Helper {
              * f4 -> ( MethodDeclaration() )*
              * f5 -> "}"
              */
-            return ((ClassDeclaration) c).f1.f0.toString();
+            return ((ClassDeclaration) c).f1.f0.tokenImage;
         } else if (c instanceof ClassExtendsDeclaration) {
             /*
              * Grammar production:
@@ -56,7 +86,7 @@ final class Helper {
              * f6 -> ( MethodDeclaration() )*
              * f7 -> "}"
              */
-            return ((ClassExtendsDeclaration) c).f1.f0.toString();
+            return ((ClassExtendsDeclaration) c).f1.f0.tokenImage;
         } else {
             throw new HelperException("Type mismatch");
         }
@@ -80,13 +110,44 @@ final class Helper {
              * f11 -> ";"
              * f12 -> "}"
              */
-            return ((MethodDeclaration) m).f2.f0.toString();
+            return ((MethodDeclaration) m).f2.f0.tokenImage;
         } else {
             throw new HelperException("Type mismatch");
         }
     }
 
     public static boolean parameterDistinct(FormalParameterList fpl) {
+        // Check if FormalParameterList() are pairwise distinct
+        Set<String> declared = new HashSet<>();
+
+        /*
+         * Grammar production:
+         * f0 -> FormalParameter()
+         * f1 -> ( FormalParameterRest() )*
+         */
+        FormalParameter first = fpl.f0;
+        NodeListInterface rest = fpl.f1;
+
+        /*
+         * Grammar production:
+         * f0 -> Type()
+         * f1 -> Identifier()
+         */
+        declared.add(first.f1.f0.tokenImage);
+        for (Enumeration<Node> e = rest.elements(); e.hasMoreElements(); ) {
+            /*
+             * Grammar production:
+             * f0 -> ","
+             * f1 -> FormalParameter()
+             */
+            String id = ((FormalParameterRest) e.nextElement()).f1.f1.f0.tokenImage;
+
+            if (declared.contains(id))
+                return false;
+            else
+                declared.add(id);
+        }
+
         return true;
     }
 
@@ -95,7 +156,13 @@ final class Helper {
         Set<String> declared = new HashSet<>();
 
         for (Enumeration<Node> e = vds.elements(); e.hasMoreElements(); ) {
-            String id = ((VarDeclaration) e.nextElement()).f1.f0.toString();
+            /*
+             * Grammar production:
+             * f0 -> Type()
+             * f1 -> Identifier()
+             * f2 -> ";"
+             */
+            String id = ((VarDeclaration) e.nextElement()).f1.f0.tokenImage;
 
             if (declared.contains(id))
                 return false;
@@ -111,7 +178,23 @@ final class Helper {
         Set<String> declared = new HashSet<>();
 
         for (Enumeration<Node> e = mds.elements(); e.hasMoreElements(); ) {
-            String id = ((MethodDeclaration) e.nextElement()).f1.f0.toString();
+            /*
+             * Grammar production:
+             * f0 -> "public"
+             * f1 -> Type()
+             * f2 -> Identifier()
+             * f3 -> "("
+             * f4 -> ( FormalParameterList() )?
+             * f5 -> ")"
+             * f6 -> "{"
+             * f7 -> ( VarDeclaration() )*
+             * f8 -> ( Statement() )*
+             * f9 -> "return"
+             * f10 -> Expression()
+             * f11 -> ";"
+             * f12 -> "}"
+             */
+            String id = ((MethodDeclaration) e.nextElement()).f2.f0.tokenImage;
 
             if (declared.contains(id))
                 return false;
@@ -152,7 +235,7 @@ final class Helper {
                  * f16 -> "}"
                  * f17 -> "}"
                  */
-                id = ((MainClass) n).f1.toString();
+                id = ((MainClass) n).f1.f0.tokenImage;
             } else if (n instanceof TypeDeclaration) {
                 /*
                  * Grammar production:
@@ -160,13 +243,10 @@ final class Helper {
                  *       | ClassExtendsDeclaration()
                  */
                 NodeChoice c = ((TypeDeclaration) n).f0;
-                if (c.which == 0) {
-                    id = ((ClassDeclaration) c.choice).f1.f0.toString();
-                } else if (c.which == 1) {
-                    id = ((ClassExtendsDeclaration) c.choice).f1.f0.toString();
-                } else {
-                    throw new HelperException("Type mismatch");
-                }
+                if (c.which == 0)
+                    id = ((ClassDeclaration) c.choice).f1.f0.tokenImage;
+                else // c.which == 1
+                    id = ((ClassExtendsDeclaration) c.choice).f1.f0.tokenImage;
             } else {
                 throw new HelperException("Type mismatch");
             }
@@ -180,100 +260,175 @@ final class Helper {
         return true;
     }
 
-    public static MethodDeclaration methodType(Node c, String m) {
-        return null;
+    public static MethodType methodType(MethodDeclaration m) {
+        ArrayList<String> params = new ArrayList<>();
+        String retType;
+
+        /*
+         * Grammar production:
+         * f0 -> "public"
+         * f1 -> Type()
+         * f2 -> Identifier()
+         * f3 -> "("
+         * f4 -> ( FormalParameterList() )?
+         * f5 -> ")"
+         * f6 -> "{"
+         * f7 -> ( VarDeclaration() )*
+         * f8 -> ( Statement() )*
+         * f9 -> "return"
+         * f10 -> Expression()
+         * f11 -> ";"
+         * f12 -> "}"
+         */
+        if (m.f4.present()) {
+            /*
+             * Grammar production:
+             * f0 -> FormalParameter()
+             * f1 -> ( FormalParameterRest() )*
+             */
+            FormalParameterList fpl = (FormalParameterList) m.f4.node;
+            FormalParameter first = fpl.f0;
+            NodeListInterface rest = fpl.f1;
+
+            /*
+             * Grammar production:
+             * f0 -> Type()
+             * f1 -> Identifier()
+             */
+            params.add(first.f1.f0.tokenImage);
+            for (Enumeration<Node> e = rest.elements(); e.hasMoreElements(); ) {
+                /*
+                 * Grammar production:
+                 * f0 -> ","
+                 * f1 -> FormalParameter()
+                 */
+                String id = ((FormalParameterRest) e.nextElement()).f1.f1.f0.tokenImage;
+                params.add(id);
+            }
+        }
+
+        /*
+         * Grammar production:
+         * f0 -> ArrayType()
+         *       | BooleanType()
+         *       | IntegerType()
+         *       | Identifier()
+         */
+        NodeChoice c = m.f1.f0;
+        if (c.which == 0)
+            retType = "int[]";
+        else if (c.which == 1)
+            retType = "boolean";
+        else if (c.which == 2)
+            retType = "int";
+        else // c.which == 3
+            retType = ((Identifier) c.choice).f0.tokenImage;
+
+        return new MethodType(params, retType);
     }
 }
 
 class Symbol {
-	private String name;
-	private static Map<String, Symbol> dict = new HashMap<>();
-	
-	private Symbol(String n) {
-		name = n;
-	}
-	
-	@Override
-	public String toString() {
-		return name;
-	}
-	
-	public static Symbol fromString(String n) {
-		String u = n.intern();
-		return dict.putIfAbsent(u, new Symbol(u));
-	}
+    private String name;
+    private static Map<String, Symbol> dict = new HashMap<>();
+
+    private Symbol(String n) {
+        name = n;
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+
+    public static Symbol fromString(String n) {
+        String u = n.intern();
+        return dict.putIfAbsent(u, new Symbol(u));
+    }
 }
 
 class Binder {
-	private Symbol symbol;
-	private Node type;
+    private Symbol symbol;
+    private Node type;
     private Scope scope;
-	
-	public Binder(Symbol sy, Node t, Scope sc) {
-		symbol = sy; type = t; scope = sc;
-	}
-	
-	public Symbol getSymbol() {
-		return symbol;
-	}
-	
-	public Node getType() {
-		return type;
-	}
 
-	public Scope getScope() { return scope; }
+    public Binder(Symbol sy, Node t, Scope sc) {
+        symbol = sy;
+        type = t;
+        scope = sc;
+    }
+
+    public Symbol getSymbol() {
+        return symbol;
+    }
+
+    public Node getType() {
+        return type;
+    }
+
+    public Scope getScope() {
+        return scope;
+    }
 }
 
-class Scope
-{
-	private Map<Symbol, Binder> table = new HashMap<>();
-	private Scope parent;
-	
-	public Scope() {
-		parent = null;
-	}
-	
-	public Scope(Scope p) {
-		parent = p;
-	}
+class Scope {
+    private Map<Symbol, Binder> table = new HashMap<>();
+    private Scope parent;
 
-	public void add(Symbol s, Node t) {
-	    assert !table.containsKey(s) : "Symbol existed";
-		table.put(s, new Binder(s, t, this));
-	}
-	
-	public Binder lookup(Symbol s) {
-		Binder b = table.get(s);
+    public Scope() {
+        parent = null;
+    }
 
-		if (b != null)
-		    return b;
-		// Lookup recursively
-		else if (parent != null)
-		    return parent.lookup(s);
-		else
-		    return null;
-	}
+    public Scope(Scope p) {
+        parent = p;
+    }
+
+    public void add(Symbol s, Node t) {
+        assert !table.containsKey(s) : "Symbol existed";
+        table.put(s, new Binder(s, t, this));
+    }
+
+    public Binder lookup(Symbol s) {
+        Binder b = table.get(s);
+
+        if (b != null)
+            return b;
+            // Lookup recursively
+        else if (parent != null)
+            return parent.lookup(s);
+        else
+            return null;
+    }
+
+    public Binder lookupLocal(Symbol s) {
+        Binder b = table.get(s);
+
+        if (b != null)
+            return b;
+        else
+            return null;
+    }
+
+    public Scope getParent() {
+        return parent;
+    }
 }
 
 class ErrorMessage {
-	private static boolean errors = false;
-	
-	public static void complain() {
-		errors = true;
-	}
-	
-	public static void complain(String msg) {
-		errors = true;
-		System.out.println(msg);
-	}
-	
-	public static boolean anyErrors() {
-		return errors;
-	}
+    private static boolean errors = false;
+
+    public static void complain(String msg) {
+        errors = true;
+        System.out.println(msg);
+    }
+
+    public static boolean anyErrors() {
+        return errors;
+    }
 }
 
 /**
- * The first pass builds the symbol table.
+ * The first pass builds the symbol table, checks overloading and all distinct properties.
  */
 class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
     /*
@@ -290,10 +445,10 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
         }
 
         try {
+            // distinct(classname(mc),classname(d1),...,classname(dn))
             if (Helper.classDistinct(cl)) {
                 n.f0.accept(this, s);
                 n.f1.accept(this, s);
-                n.f2.accept(this, s);
             } else {
                 ErrorMessage.complain("Class identifiers are not pairwise distinct.");
             }
@@ -324,11 +479,20 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
      */
     @Override
     public void visit(MainClass n, Scope s) {
-        // Uniqueness has been guaranteed in Goal.
-        s.add(Symbol.fromString(n.f1.f0.toString()), n);
+        Symbol id = Symbol.fromString(n.f1.f0.tokenImage);
+        s.add(id, n);
 
         // Method `public static void main(String[] id)` is ignored for overloading check,
         // since we all know parser would complain if some other classes defined this method.
+        Scope ns = new Scope(s);
+        // distinct(id1,...,idr)
+        if (Helper.variableDistinct(n.f14)) {
+            n.f14.accept(this, ns);
+            // Skip `( Statement() )*`
+        } else {
+            ErrorMessage.complain("Variable identifiers are not pairwise distinct. " +
+                    "In class " + id.toString());
+        }
     }
 
     /*
@@ -341,26 +505,23 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
      */
     @Override
     public void visit(ClassDeclaration n, Scope s) {
-        s.add(Symbol.fromString(n.f1.f0.toString()), n);
-        n.f0.accept(this, s);
-        n.f1.accept(this, s);
+        Symbol id = Symbol.fromString(n.f1.f0.tokenImage);
+        s.add(id, n);
 
         Scope ns = new Scope(s);
-        n.f2.accept(this, ns);
-
+        // distinct(id1,...,idf)
         if (Helper.variableDistinct(n.f3)) {
             n.f3.accept(this, ns);
 
-            if (Helper.methodDistinct(n.f4)) {
+            // distinct(methodname(m1),...methodname(mk))
+            if (Helper.methodDistinct(n.f4))
                 n.f4.accept(this, ns);
-                n.f5.accept(this, ns);
-            } else {
-                ErrorMessage.complain("Method identifiers are not pairwise distinct." +
-                        "in class " + n.f1.f0.toString());
-            }
+            else
+                ErrorMessage.complain("Method identifiers are not pairwise distinct. " +
+                        "In class " + id.toString());
         } else {
-            ErrorMessage.complain("Variable identifiers are not pairwise distinct." +
-                    "in class " + n.f1.f0.toString());
+            ErrorMessage.complain("Variable identifiers are not pairwise distinct. " +
+                    "In class " + id.toString());
         }
     }
 
@@ -376,29 +537,23 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
      */
     @Override
     public void visit(ClassExtendsDeclaration n, Scope s) {
-        s.add(Symbol.fromString(n.f1.f0.toString()), n);
-        n.f0.accept(this, s);
-        n.f1.accept(this, s);
+        Symbol id = Symbol.fromString(n.f1.f0.tokenImage);
+        s.add(id, n);
 
         Scope ns = new Scope(s);
-        n.f2.accept(this, ns);
-        n.f3.accept(this, ns);
-        n.f4.accept(this, ns);
-
+        // distinct(id1,...,idf)
         if (Helper.variableDistinct(n.f5)) {
             n.f5.accept(this, ns);
 
-            if (Helper.methodDistinct(n.f6)) {
-                // TODO: overloading check
+            // distinct(methodname(m1),...methodname(mk))
+            if (Helper.methodDistinct(n.f6))
                 n.f6.accept(this, ns);
-                n.f7.accept(this, ns);
-            } else {
-                ErrorMessage.complain("Method identifiers are not pairwise distinct." +
-                        "in class " + n.f1.f0.toString());
-            }
+            else
+                ErrorMessage.complain("Method identifiers are not pairwise distinct. " +
+                        "In class " + id.toString());
         } else {
-            ErrorMessage.complain("Variable identifiers are not pairwise distinct." +
-                    "in class " + n.f1.f0.toString());
+            ErrorMessage.complain("Variable identifiers are not pairwise distinct. " +
+                    "In class " + id.toString());
         }
     }
 
@@ -419,25 +574,43 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
      */
     @Override
     public void visit(MethodDeclaration n, Scope s) {
-        s.add(Symbol.fromString(n.f2.f0.toString()), n);
-        n.f0.accept(this, s);
-        n.f1.accept(this, s);
-        n.f2.accept(this, s);
+        Symbol id = Symbol.fromString(n.f2.f0.tokenImage);
+        Binder b = s.lookup(id);
+
+        // Overloading check
+        // noOverloading(id,idp,methodname(mi))
+        if (b != null) {
+            MethodType base = Helper.methodType((MethodDeclaration) b.getType());
+            MethodType inherit = Helper.methodType(n);
+
+            if (base.equals(inherit)) {
+                ErrorMessage.complain("Overloading is now allowed. " +
+                        "In class " + id.toString());
+                return;
+            }
+        }
+        s.add(id, n);
 
         Scope ns = new Scope(s);
-        n.f3.accept(this, s);
-
         if (n.f4.present()) {
+            // distinct(idf1,...,idfn)
             if (Helper.parameterDistinct((FormalParameterList) n.f4.node)) {
                 n.f4.accept(this, ns);
             } else {
-                ErrorMessage.complain("Parameter identifiers are not pairwise distinct." +
-                        "in class " + n.f1.f0.toString());
+                ErrorMessage.complain("Parameter identifiers are not pairwise distinct. " +
+                        "In class " + id.toString());
+                return;
             }
         }
 
+        // distinct(id1,...,idr)
+        if (Helper.variableDistinct(n.f7)) {
+            n.f7.accept(this, ns);
+        } else {
+            ErrorMessage.complain("Variable identifiers are not pairwise distinct. " +
+                    "In class " + id.toString());
+        }
     }
-
 
     /*
      * f0 -> Type()
@@ -446,31 +619,34 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
      */
     @Override
     public void visit(VarDeclaration n, Scope s) {
-        s.add(Symbol.fromString(n.f1.f0.toString()), n);
+        s.add(Symbol.fromString(n.f1.f0.tokenImage), n);
     }
 }
 
-class SecondPhaseVisitor extends GJDepthFirst<String, Scope> {
-	
+class SecondPhaseVisitor extends GJDepthFirst<Node, Scope> {
+
 }
 
 public class Typecheck {
-    public static void main(String[] args) throws ParseException { 
-    	Scope env = new Scope();
-    	
+    public static void main(String[] args) throws ParseException {
+        Scope env = new Scope();
+
         // According to the instruction: "java Typecheck < P.java"
         // We use `System.in` as the input stream.
         try {
             new MiniJavaParser(System.in);
-
             Goal program = MiniJavaParser.Goal();
+
             program.accept(new FirstPhaseVisitor(), env);
-            program.accept(new SecondPhaseVisitor(), env);
-            
-            if (!ErrorMessage.anyErrors())
-            	System.out.println("Program type checked successfully");
-            else
-            	System.out.println("Type error");
+            if (ErrorMessage.anyErrors()) {
+                System.out.println("Type error");
+            } else {
+                program.accept(new SecondPhaseVisitor(), env);
+                if (ErrorMessage.anyErrors())
+                    System.out.println("Type error");
+                else
+                    System.out.println("Program type checked successfully");
+            }
         } catch (ParseException e) {
             System.out.println("Type error");
         }
