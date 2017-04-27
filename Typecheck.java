@@ -381,11 +381,11 @@ class Scope {
         parent = p;
     }
 
-    public void add(Symbol s, Node t) {
-        if (table.containsKey(s)) // Oh oh!
+    public void add(Symbol sy, Node t, Scope sc) {
+        if (table.containsKey(sy)) // Oh oh!
             throw new Error("Symbol existed");
 
-        table.put(s, new Binder(s, t, this));
+        table.put(sy, new Binder(sy, t, sc));
     }
 
     public Binder lookup(Symbol s) {
@@ -480,11 +480,11 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
     @Override
     public void visit(MainClass n, Scope s) {
         Symbol id = Symbol.fromString(n.f1.f0.tokenImage);
-        s.add(id, n);
+        Scope ns = new Scope(s);
+        s.add(id, n, ns);
 
         // Method `public static void main(String[] id)` is ignored for overloading check,
         // since we all know parser would complain if some other classes defined this method.
-        Scope ns = new Scope(s);
         // distinct(id1,...,idr)
         if (Helper.variableDistinct(n.f14)) {
             n.f14.accept(this, ns);
@@ -506,9 +506,9 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
     @Override
     public void visit(ClassDeclaration n, Scope s) {
         Symbol id = Symbol.fromString(n.f1.f0.tokenImage);
-        s.add(id, n);
-
         Scope ns = new Scope(s);
+        s.add(id, n, ns);
+
         // distinct(id1,...,idf)
         if (Helper.variableDistinct(n.f3)) {
             n.f3.accept(this, ns);
@@ -538,9 +538,14 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
     @Override
     public void visit(ClassExtendsDeclaration n, Scope s) {
         Symbol id = Symbol.fromString(n.f1.f0.tokenImage);
-        s.add(id, n);
+        Symbol base = Symbol.fromString(n.f3.f0.tokenImage);
+        Binder b = s.lookup(base);
+        if (b == null) // Oh oh!
+            throw new Error("Symbol doesn't exist");
 
-        Scope ns = new Scope(s);
+        Scope ns = new Scope(b.getScope());
+        s.add(id, n, ns);
+
         // distinct(id1,...,idf)
         if (Helper.variableDistinct(n.f5)) {
             n.f5.accept(this, ns);
@@ -584,21 +589,21 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
             MethodType inherit = Helper.methodType(n);
 
             if (base.equals(inherit)) {
-                ErrorMessage.complain("Overloading is now allowed. " +
-                        "In class " + id.toString());
+                ErrorMessage.complain("Overloading is now allowed.");
                 return;
             }
         }
-        s.add(id, n);
 
         Scope ns = new Scope(s);
+        s.add(id, n, ns);
+
         if (n.f4.present()) {
             // distinct(idf1,...,idfn)
             if (Helper.parameterDistinct((FormalParameterList) n.f4.node)) {
                 n.f4.accept(this, ns);
             } else {
                 ErrorMessage.complain("Parameter identifiers are not pairwise distinct. " +
-                        "In class " + id.toString());
+                        "In method " + id.toString());
                 return;
             }
         }
@@ -608,7 +613,7 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
             n.f7.accept(this, ns);
         } else {
             ErrorMessage.complain("Variable identifiers are not pairwise distinct. " +
-                    "In class " + id.toString());
+                    "In method " + id.toString());
         }
     }
 
@@ -619,7 +624,7 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
      */
     @Override
     public void visit(VarDeclaration n, Scope s) {
-        s.add(Symbol.fromString(n.f1.f0.tokenImage), n);
+        s.add(Symbol.fromString(n.f1.f0.tokenImage), n, s);
     }
 }
 
