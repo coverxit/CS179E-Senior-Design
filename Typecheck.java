@@ -281,6 +281,7 @@ class Helper {
         return new MethodType(params, Helper.expressionType(m.f1));
     }
 
+    public static final String UNDEFINED = "";
     public static final String INT_ARRAY = "int[]";
     public static final String BOOLEAN = "boolean";
     public static final String INT = "int";
@@ -640,7 +641,7 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
  * The second pass checks return value of methods, and checks statements, expressions and primary expressions.
  */
 
-class SecondPhaseVisitor extends GJDepthFirst<Node, Scope> {
+class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
     /*
      * f0 -> "class"
      * f1 -> Identifier()
@@ -662,7 +663,7 @@ class SecondPhaseVisitor extends GJDepthFirst<Node, Scope> {
      * f17 -> "}"
      */
     @Override
-    public Node visit(MainClass n, Scope s) {
+    public ExpressionType visit(MainClass n, Scope s) {
         Symbol id = Symbol.fromString(n.f1.f0.tokenImage);
         Binder b = s.lookup(id);
 
@@ -679,7 +680,7 @@ class SecondPhaseVisitor extends GJDepthFirst<Node, Scope> {
      * f5 -> "}"
      */
     @Override
-    public Node visit(ClassDeclaration n, Scope s) {
+    public ExpressionType visit(ClassDeclaration n, Scope s) {
         Symbol id = Symbol.fromString(n.f1.f0.tokenImage);
         Binder b = s.lookup(id);
 
@@ -698,7 +699,7 @@ class SecondPhaseVisitor extends GJDepthFirst<Node, Scope> {
      * f7 -> "}"
      */
     @Override
-    public Node visit(ClassExtendsDeclaration n, Scope s) {
+    public ExpressionType visit(ClassExtendsDeclaration n, Scope s) {
         Symbol id = Symbol.fromString(n.f1.f0.tokenImage);
         Binder b = s.lookup(id);
 
@@ -722,7 +723,7 @@ class SecondPhaseVisitor extends GJDepthFirst<Node, Scope> {
      * f12 -> "}"
      */
     @Override
-    public Node visit(MethodDeclaration n, Scope s) {
+    public ExpressionType visit(MethodDeclaration n, Scope s) {
         Symbol id = Symbol.fromString(n.f2.f0.tokenImage);
         Binder b = s.lookup(id);
         Scope ns = b.getScope();
@@ -731,8 +732,8 @@ class SecondPhaseVisitor extends GJDepthFirst<Node, Scope> {
 
         // Check return value type
         // A,C |- e:t
-        Type retType = (Type) n.f10.accept(this, ns);
-        if (!Helper.expressionType(n.f1).equals(Helper.expressionType(retType))) {
+        ExpressionType retType = n.f10.accept(this, ns);
+        if (!Helper.expressionType(n.f1).equals(retType)) {
             ErrorMessage.complain("Return type mismatch. " +
                     "In method: " + id.toString());
         }
@@ -746,19 +747,17 @@ class SecondPhaseVisitor extends GJDepthFirst<Node, Scope> {
      * f3 -> ";"
      */
     @Override
-    public Node visit(AssignmentStatement n, Scope s) {
+    public ExpressionType visit(AssignmentStatement n, Scope s) {
         Symbol id = Symbol.fromString(n.f0.f0.tokenImage);
         Binder b = s.lookup(id);
 
         // A(id) = t1
         if (b != null) {
             ExpressionType idt = Helper.expressionType((Type) b.getType());
-            Type rhs = (Type) n.f2.accept(this, s);
+            ExpressionType et = n.f2.accept(this, s);
 
             // A,C |- e:t2
-            if (rhs != null) {
-                ExpressionType et = Helper.expressionType(rhs);
-
+            if (et != null) {
                 // t2 <= t1
                 if (!idt.equals(et)) {
                     // if idtn and etn are both classes
@@ -802,19 +801,15 @@ class SecondPhaseVisitor extends GJDepthFirst<Node, Scope> {
             ExpressionType idt = Helper.expressionType((Type) b.getType());
 
             if (idt.getType().equals(Helper.INT_ARRAY)) {
-                Type index = (Type) n.f2.accept(this, s);
+                ExpressionType indext = n.f2.accept(this, s);
 
                 // A,C |- e1:int
-                if (index != null) {
-                    ExpressionType indext = Helper.expressionType(index);
-
+                if (indext != null) {
                     if (indext.getType().equals(Helper.INT)) {
-                        Type rhs = (Type) n.f5.accept(this, s);
+                        ExpressionType et = n.f5.accept(this, s);
 
                         // A,C |- e2: int
-                        if (rhs != null) {
-                            ExpressionType et = Helper.expressionType(rhs);
-
+                        if (et != null) {
                             if (!et.getType().equals(Helper.INT)) {
                                 ErrorMessage.complain("ArrayAssignment: RHS type mismatch. " +
                                         "RHS: " + et.getType());
