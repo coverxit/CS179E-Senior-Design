@@ -589,7 +589,8 @@ class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
             MethodType inherit = Helper.methodType(n);
 
             if (base.equals(inherit)) {
-                ErrorMessage.complain("Overloading is now allowed.");
+                ErrorMessage.complain("Overloading is now allowed. " +
+                        "Method: " + id.toString());
                 return;
             }
         }
