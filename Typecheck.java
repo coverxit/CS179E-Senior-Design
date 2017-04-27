@@ -1,8 +1,7 @@
+import java.util.*;
+
 import syntaxtree.*;
 import visitor.*;
-
-import java.lang.reflect.Array;
-import java.util.*;
 
 class HelperException extends Exception {
     public HelperException(String message) {
