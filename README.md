@@ -6,9 +6,10 @@ link to project instructions: http://www.cs.ucr.edu/~lesani/teaching/cp/cp.html
 
 To compile and run:
 
+```
 javac Typecheck.java
-
-java Typecheck java-file
+java Typecheck < java-file
+```
 
 ## Test Result
 
