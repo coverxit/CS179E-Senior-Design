@@ -128,9 +128,10 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
                 if (!idt.equals(et)) {
                     // if idtn and etn are both classes
                     if ((idt.getNode() instanceof Identifier) && (et.getNode() instanceof Identifier)) {
-                        if (SubtypingRelation.isSubtyping(Symbol.fromString(et.getType()),
+                        if (!SubtypingRelation.isSubtyping(Symbol.fromString(et.getType()),
                                 Symbol.fromString(idt.getType()))) {
-
+                            ErrorMessage.complain("Assignment: Type mismatch (no inheritance). " +
+                                    "LHS: " + idt.getType() + ", RHS: " + et.getType());
                         }
                     } else {
                         ErrorMessage.complain("Assignment: Type mismatch. " +
@@ -499,6 +500,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
                                 String actt = actparam.get(i);
 
                                 // A,C |- ei:ti; ti <= ti'
+                                // type mismatch?
                                 if (!reft.equals(actt)) {
                                     if (!Helper.isBasicType(reft) && !Helper.isBasicType(actt)) {
                                         if (!SubtypingRelation.isSubtyping(Symbol.fromString(actt),
