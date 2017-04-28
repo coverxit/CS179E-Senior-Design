@@ -189,7 +189,7 @@ class Helper {
              * f0 -> ","
              * f1 -> FormalParameter()
              */
-           String id = Helper.identifierName(((FormalParameterRest) e.nextElement()).f1.f1);
+            String id = Helper.identifierName(((FormalParameterRest) e.nextElement()).f1.f1);
 
             if (declared.contains(id))
                 return false;
@@ -1224,18 +1224,18 @@ class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
                         ArrayList<String> actparam = new ArrayList<>();
                         ExpressionList el = (ExpressionList) n.f4.node;
 
-                /*
-                 * f0 -> Expression()
-                 * f1 -> ( ExpressionRest() )*
-                 */
+                        /*
+                         * f0 -> Expression()
+                         * f1 -> ( ExpressionRest() )*
+                         */
                         actparam.add(el.f0.accept(this, s).getType());
                         for (Enumeration<Node> e = el.f1.elements(); e.hasMoreElements(); ) {
                             ExpressionRest er = (ExpressionRest) e.nextElement();
 
-                    /*
-                     * f0 -> ","
-                     * f1 -> Expression()
-                     */
+                            /*
+                             * f0 -> ","
+                             * f1 -> Expression()
+                             */
                             actparam.add(er.f1.accept(this, s).getType());
                         }
 
