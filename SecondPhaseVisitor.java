@@ -526,7 +526,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
                 } else {
                     type = Helper.UNDEFINED;
                     ErrorMessage.complain("MessageSend: Method " + m.toString() + " is not defined " +
-                            "in class " + Helper.className(cs.getNodeBinded()));
+                            "in class " + Helper.className(cs.getNodeBound()));
                 }
             } else {
                 type = Helper.UNDEFINED;
@@ -578,7 +578,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
             }
         } else if (c.which == 4) { // ThisExpression()
             // A,C |- this:C
-            type = Helper.className(s.getParent().getNodeBinded());
+            type = Helper.className(s.getParent().getNodeBound());
         } else if (c.which == 5) { // ArrayAllocationExpression()
             // A,C |- e:int -> A,C |- new int[e]:int[]
             /*

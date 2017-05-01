@@ -49,7 +49,7 @@ public class Scope {
         return parent;
     }
 
-    public Node getNodeBinded() {
+    public Node getNodeBound() {
         return bind;
     }
 }
