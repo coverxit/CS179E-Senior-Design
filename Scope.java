@@ -18,9 +18,6 @@ public class Scope {
     }
 
     public void add(Symbol sy, Node t, Scope sc) {
-        if (table.containsKey(sy)) // Oh oh!
-            throw new Error("Symbol existed");
-
         table.put(sy, new Binder(sy, t, sc));
     }
 

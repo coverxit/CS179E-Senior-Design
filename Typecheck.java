@@ -24,8 +24,6 @@ public class Typecheck {
             }
         } catch (ParseException e) {
             System.out.println("Type error");
-        } catch (Error e) {
-            System.out.println("Type error");
         }
     }
 }
