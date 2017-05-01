@@ -1,7 +1,7 @@
 import syntaxtree.*;
 
 public class Typecheck {
-    public static void main(String[] args) throws ParseException {
+    public static void main(String[] args) {
         // According to the instruction: "java Typecheck < P.java"
         // We use `System.in` as the input stream.
         try {
@@ -23,6 +23,8 @@ public class Typecheck {
                 }
             }
         } catch (ParseException e) {
+            System.out.println("Type error");
+        } catch (Error e) {
             System.out.println("Type error");
         }
     }
