@@ -28,7 +28,7 @@ public class Scope {
 
         if (b != null)
             return b;
-            // Lookup recursively
+        // Lookup recursively
         else if (parent != null)
             return parent.lookup(s);
         else
