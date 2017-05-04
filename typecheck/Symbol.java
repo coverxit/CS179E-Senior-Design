@@ -1,3 +1,5 @@
+package typecheck;
+
 import java.util.*;
 
 public class Symbol {

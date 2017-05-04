@@ -1,3 +1,5 @@
+package typecheck;
+
 public class ErrorMessage {
     private static boolean errors = false;
 

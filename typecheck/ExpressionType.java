@@ -1,3 +1,5 @@
+package typecheck;
+
 import syntaxtree.*;
 
 public class ExpressionType {
