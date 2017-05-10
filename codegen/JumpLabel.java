@@ -35,11 +35,11 @@ public class JumpLabel {
     }
 
     public static JumpLabel AndElse(int n) {
-        return new JumpLabel("and%d_else", n);
+        return new JumpLabel("ss%d_else", n);
     }
 
     public static JumpLabel AndEnd(int n) {
-        return new JumpLabel("and%d_end", n);
+        return new JumpLabel("ss%d_end", n);
     }
 
     @Override

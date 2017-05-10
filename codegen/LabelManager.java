@@ -20,18 +20,32 @@ public class LabelManager {
     }
 
     public VariableLabel newTempVariable() {
-        return new VariableLabel(varNo++);
+        return VariableLabel.TempVariable(varNo++);
     }
 
-    public VariableLabel constant(String n) { return new VariableLabel(n); }
+    public VariableLabel functionCall(String fc) {
+        return VariableLabel.FunctionCall(fc);
+    }
 
-    public VariableLabel thisVariable() { return new VariableLabel("this"); }
+    public VariableLabel constant(String c) {
+        return VariableLabel.Constant(c);
+    }
 
-    public VariableLabel classVariable(int offset) { return new VariableLabel(offset, "this"); }
+    public VariableLabel thisVariable() {
+        return VariableLabel.This();
+    }
 
-    public VariableLabel localVariable(String n) { return new VariableLabel(n); }
+    public VariableLabel thisVariable(int offset) {
+        return VariableLabel.This(offset);
+    }
 
-    public VariableLabel localVariable(int offset, String n) { return new VariableLabel(offset, n); }
+    public VariableLabel localVariable(String var) {
+        return VariableLabel.Local(var);
+    }
+
+    public VariableLabel localVariable(int offset, String var) {
+        return VariableLabel.Local(offset, var);
+    }
 
     public JumpLabel newNullJump() {
         return JumpLabel.Null(nullJmpNo++);

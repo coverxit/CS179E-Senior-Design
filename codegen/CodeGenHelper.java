@@ -38,7 +38,7 @@ public class CodeGenHelper {
     }
 
     public static String Call(VariableLabel v, VariableLabel thislbl, ArrayList<VariableLabel> pl) {
-        StringBuilder sb = new StringBuilder("call :" + v.toString() + "(" + thislbl.toString());
+        StringBuilder sb = new StringBuilder("call " + v.toString() + "(" + thislbl.toString());
         for (VariableLabel l : pl) {
             sb.append(" ");
             sb.append(l.toString());
@@ -61,33 +61,51 @@ public class CodeGenHelper {
             // Thus its parent is the scope of the class.
             String cn = TypeCheckHelper.className(p.getScope().getParent().getNodeBound());
             int offset = t.getClassRecordManager().lookupVariableOffset(cn, id.toString());
-            label = t.getLabelManager().classVariable(offset).dereference();
+            label = t.getLabelManager().thisVariable(offset).dereference();
         }
         return label;
+    }
+
+    public static VariableLabel retrieveDerefOrFuncCall(VariableLabel v, CodeGenPair p) {
+        Translator t = p.getTranslator();
+        VariableLabel imm = v;
+
+        /*
+            t.0 = v
+            PrintIntS(t.0)
+        */
+        if (v.isDereference() || v.isFunctionCall()) {
+            imm = t.getLabelManager().newTempVariable();
+            t.outputAssignment(imm, v);
+        }
+        return imm;
     }
 
     public static VariableLabel nullCheck(VariableLabel l, CodeGenPair p) {
         Translator t = p.getTranslator();
         LabelManager lm = t.getLabelManager();
         VariableLabel var = l;
-        JumpLabel jmp = lm.newNullJump();
 
-        /*
-            t.0 = l
-            if t.0 goto :null0
-                Error("null pointer");
-            null0:
-         */
-        if (l.isDereference()) {
-            var = lm.newTempVariable();
-            t.outputAssignment(var, l);
+        if (!l.isThisPointer()) {
+            JumpLabel jmp = lm.newNullJump();
+
+            /*
+                t.0 = l
+                if t.0 goto :null0
+                    Error("null pointer");
+                null0:
+             */
+            if (l.isDereference() || l.isFunctionCall()) {
+                var = lm.newTempVariable();
+                t.outputAssignment(var, l);
+            }
+
+            t.outputIf(var, jmp);
+            t.getOutput().increaseIndent();
+            t.outputError("null pointer");
+            t.getOutput().decreaseIndent();
+            t.outputJumpLabel(jmp);
         }
-
-        t.outputIf(var, jmp);
-        t.getOutput().increaseIndent();
-        t.outputError("null pointer");
-        t.getOutput().decreaseIndent();
-        t.outputJumpLabel(jmp);
         return var;
     }
 
@@ -106,6 +124,7 @@ public class CodeGenHelper {
                 t.0 = MulS(ind 4)
                 t.0 = Add(t.0 l)
          */
+        l = retrieveDerefOrFuncCall(l, p);
         t.outputAssignment(var, l.dereference());
         t.outputAssignment(var, Lt(ind.toString(), var.toString()));
 

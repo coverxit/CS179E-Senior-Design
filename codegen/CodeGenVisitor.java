@@ -10,7 +10,7 @@ import typecheck.*;
  * For intermediate code generation.
  */
 public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
-    private SecondPhaseVisitor spv = new SecondPhaseVisitor();
+    private boolean helperFunctionCalled = false;
 
     /*
      * f0 -> MainClass()
@@ -36,8 +36,10 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
         n.f0.accept(this, p);
         n.f1.accept(this, p);
 
-        t.outputHelperFunction();
-        t.getOutput().writeLine();
+        if (helperFunctionCalled) {
+            t.outputHelperFunction();
+            t.getOutput().writeLine();
+        }
         return null;
     }
 
@@ -145,7 +147,8 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
 
         CodeGenPair np = new CodeGenPair(ns, t);
         n.f8.accept(this, np);
-        t.outputReturn(n.f10.accept(this, np));
+        VariableLabel ret = CodeGenHelper.retrieveDerefOrFuncCall(n.f10.accept(this, np), np);
+        t.outputReturn(ret);
 
         t.getLabelManager().endMethod();
         t.getOutput().decreaseIndent();
@@ -164,7 +167,13 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
         Symbol id = Symbol.fromString(TypeCheckHelper.identifierName(n.f0));
         Translator t = p.getTranslator();
 
-        t.outputAssignment(CodeGenHelper.identifierLabel(id, p), n.f2.accept(this, p));
+        VariableLabel lhs = CodeGenHelper.identifierLabel(id, p);
+        VariableLabel rhs = n.f2.accept(this, p);
+        // "[this+n] = call t.0(...)" & "[this+n] = [this+m]" are not allowed.
+        if (lhs.isDereference() && (rhs.isFunctionCall() || rhs.isFunctionCall())) {
+            rhs = CodeGenHelper.retrieveDerefOrFuncCall(rhs, p);
+        }
+        t.outputAssignment(lhs, rhs);
         return null;
     }
 
@@ -183,7 +192,7 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
         VariableLabel idlbl = CodeGenHelper.identifierLabel(id, p);
 
         VariableLabel imm = CodeGenHelper.nullCheck(idlbl, p); // Null check first
-        VariableLabel indlbl = n.f2.accept(this, p); // Calculate index then
+        VariableLabel indlbl = CodeGenHelper.retrieveDerefOrFuncCall(n.f2.accept(this, p), p); // Calculate index then
         VariableLabel elem = CodeGenHelper.boundsCheck(imm, indlbl, p); // Bounds check then
         VariableLabel rhs = n.f5.accept(this, p); // Calculate rhs finally
 
@@ -214,7 +223,8 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
                 ...
             if0_end:
          */
-        t.outputIfNot(n.f2.accept(this, p), elselbl);
+        VariableLabel cond = CodeGenHelper.retrieveDerefOrFuncCall(n.f2.accept(this, p), p);
+        t.outputIfNot(cond, elselbl);
         t.getOutput().increaseIndent();
         n.f4.accept(this, p);
         t.outputGoto(endlbl);
@@ -244,21 +254,20 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
 
         /*
             while0_top:
-                if0 t.0 goto :while0_end
-                    ...
-                    goto :while0_top
+            if0 t.0 goto :while0_end
+                ...
+                goto :while0_top
             while0_end:
          */
         t.outputJumpLabel(top);
-        t.getOutput().increaseIndent();
 
-        t.outputIfNot(n.f2.accept(this, p), end);
+        VariableLabel cond = CodeGenHelper.retrieveDerefOrFuncCall(n.f2.accept(this, p), p);
+        t.outputIfNot(cond, end);
         t.getOutput().increaseIndent();
         n.f4.accept(this, p);
         t.outputGoto(top);
         t.getOutput().decreaseIndent();
 
-        t.getOutput().decreaseIndent();
         t.outputJumpLabel(end);
         return null;
     }
@@ -271,7 +280,9 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
      * f4 -> ";"
      */
     public VariableLabel visit(PrintStatement n, CodeGenPair p) {
-        p.getTranslator().outputPrintIntS(n.f2.accept(this, p));
+        Translator t = p.getTranslator();
+        VariableLabel exp = CodeGenHelper.retrieveDerefOrFuncCall(n.f2.accept(this, p), p);
+        t.outputPrintIntS(exp);
         return null;
     }
 
@@ -298,7 +309,6 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
     public VariableLabel visit(AndExpression n, CodeGenPair p) {
         Translator t = p.getTranslator();
         LabelManager lm = t.getLabelManager();
-        VariableLabel imm = lm.newTempVariable();
         JumpLabel elselbl = lm.newAndElseJump();
         JumpLabel endlbl = lm.newAndEndJump();
 
@@ -310,9 +320,13 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
                 t.0 = 0
             and0_end:
          */
-        t.outputIfNot(n.f0.accept(this, p), elselbl);
+        VariableLabel imm = lm.newTempVariable();
+        VariableLabel cond1 = CodeGenHelper.retrieveDerefOrFuncCall(n.f0.accept(this, p), p);
+        t.outputIfNot(cond1, elselbl);
         t.getOutput().increaseIndent();
-        t.outputAssignment(imm, n.f2.accept(this, p));
+
+        VariableLabel cond2 = n.f2.accept(this, p);
+        t.outputAssignment(imm, cond2);
         t.outputGoto(endlbl);
         t.getOutput().decreaseIndent();
 
@@ -333,11 +347,10 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
     public VariableLabel visit(CompareExpression n, CodeGenPair p) {
         Translator t = p.getTranslator();
         LabelManager lm = t.getLabelManager();
-        VariableLabel imm = lm.newTempVariable();
 
-        t.outputAssignment(imm, CodeGenHelper.LtS(n.f0.accept(this, p).toString(),
-                n.f2.accept(this, p).toString()));
-
+        VariableLabel lhs = CodeGenHelper.retrieveDerefOrFuncCall(n.f0.accept(this, p), p);
+        VariableLabel rhs = CodeGenHelper.retrieveDerefOrFuncCall(n.f2.accept(this, p), p);
+        VariableLabel imm = lm.functionCall(CodeGenHelper.LtS(lhs.toString(), rhs.toString()));
         return imm;
     }
 
@@ -349,11 +362,10 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
     public VariableLabel visit(PlusExpression n, CodeGenPair p) {
         Translator t = p.getTranslator();
         LabelManager lm = t.getLabelManager();
-        VariableLabel imm = lm.newTempVariable();
 
-        t.outputAssignment(imm, CodeGenHelper.Add(n.f0.accept(this, p).toString(),
-                n.f2.accept(this, p).toString()));
-
+        VariableLabel lhs = CodeGenHelper.retrieveDerefOrFuncCall(n.f0.accept(this, p), p);
+        VariableLabel rhs = CodeGenHelper.retrieveDerefOrFuncCall(n.f2.accept(this, p), p);
+        VariableLabel imm = lm.functionCall(CodeGenHelper.Add(lhs.toString(), rhs.toString()));
         return imm;
     }
 
@@ -365,11 +377,10 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
     public VariableLabel visit(MinusExpression n, CodeGenPair p) {
         Translator t = p.getTranslator();
         LabelManager lm = t.getLabelManager();
-        VariableLabel imm = lm.newTempVariable();
 
-        t.outputAssignment(imm, CodeGenHelper.Sub(n.f0.accept(this, p).toString(),
-                n.f2.accept(this, p).toString()));
-
+        VariableLabel lhs = CodeGenHelper.retrieveDerefOrFuncCall(n.f0.accept(this, p), p);
+        VariableLabel rhs = CodeGenHelper.retrieveDerefOrFuncCall(n.f2.accept(this, p), p);
+        VariableLabel imm = lm.functionCall(CodeGenHelper.Sub(lhs.toString(), rhs.toString()));
         return imm;
     }
 
@@ -381,10 +392,10 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
     public VariableLabel visit(TimesExpression n, CodeGenPair p) {
         Translator t = p.getTranslator();
         LabelManager lm = t.getLabelManager();
-        VariableLabel imm = lm.newTempVariable();
 
-        t.outputAssignment(imm, CodeGenHelper.MulS(n.f0.accept(this, p).toString(),
-                n.f2.accept(this, p).toString()));
+        VariableLabel lhs = CodeGenHelper.retrieveDerefOrFuncCall(n.f0.accept(this, p), p);
+        VariableLabel rhs = CodeGenHelper.retrieveDerefOrFuncCall(n.f2.accept(this, p), p);
+        VariableLabel imm = lm.functionCall(CodeGenHelper.MulS(lhs.toString(), rhs.toString()));
         return imm;
     }
 
@@ -429,15 +440,24 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
         Translator t = p.getTranslator();
         ClassRecordManager cr = t.getClassRecordManager();
         LabelManager lm = t.getLabelManager();
-        VariableLabel imm = lm.newTempVariable();
+
+        VariableLabel pvl = CodeGenHelper.nullCheck(n.f0.accept(this, p), p);
 
         // Use the second phase visitor from typechecker to get the expression type.
-        ExpressionType pt = n.f0.accept(spv, p.getScope());
-        VariableLabel pvl = CodeGenHelper.nullCheck(n.f0.accept(this, p), p);
+        ExpressionType pt = n.f0.accept(new SecondPhaseVisitor(), p.getScope());
 
         // pt should be Identifier()
         String cn = pt.getType();
         int offset = cr.lookupMethodOffset(cn, n.f2.f0.tokenImage);
+
+        /*
+            t.0 = [pvl]
+            t.0 = [t.0+offset]
+            receivee = call t.0(pvl params...)
+         */
+        VariableLabel imm = lm.newTempVariable();
+        t.outputAssignment(imm, pvl.dereference());
+        t.outputAssignment(imm, lm.localVariable(offset, imm.toString()).dereference());
 
         // parse parameter list
         ArrayList<VariableLabel> pl = new ArrayList<>();
@@ -447,7 +467,7 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
              * f0 -> Expression()
              * f1 -> ( ExpressionRest() )*
              */
-            pl.add(el.f0.accept(this, p));
+            pl.add(CodeGenHelper.retrieveDerefOrFuncCall(el.f0.accept(this, p), p));
             for (Enumeration<Node> e = el.f1.elements(); e.hasMoreElements(); ) {
                 ExpressionRest er = (ExpressionRest) e.nextElement();
 
@@ -455,19 +475,11 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
                  * f0 -> ","
                  * f1 -> Expression()
                  */
-                pl.add(er.f1.accept(this, p));
+                pl.add(CodeGenHelper.retrieveDerefOrFuncCall(er.f1.accept(this, p), p));
             }
         }
 
-        /*
-            t.0 = [pvl]
-            t.0 = [t.0+offset]
-            t.0 = call t.0(pvl params...)
-         */
-        t.outputAssignment(imm, pvl.dereference());
-        t.outputAssignment(imm, lm.localVariable(offset, imm.toString()).dereference());
-        t.outputAssignment(imm, CodeGenHelper.Call(imm, pvl, pl));
-        return imm;
+        return lm.functionCall(CodeGenHelper.Call(imm, pvl, pl));
     }
 
     /*
@@ -504,7 +516,6 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
         } else if (c.which == 4) { // ThisExpression()
             imm = lm.thisVariable();
         } else if (c.which == 5) { // ArrayAllocationExpression()
-            // A,C |- e:int -> A,C |- new int[e]:int[]
             /*
              * Grammar production:
              * f0 -> "new"
@@ -516,12 +527,11 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
             VariableLabel size = ((ArrayAllocationExpression) c.choice).f3.accept(this, p);
 
             /*
-                t.0 = call :AllocArray(size)
+                receivee = call :AllocArray(size)
              */
-            imm = lm.newTempVariable();
-            t.outputAssignment(imm, CodeGenHelper.AllocArray(size));
+            helperFunctionCalled = true;
+            imm = lm.functionCall(CodeGenHelper.AllocArray(size));
         } else if (c.which == 6) { // AllocationExpression()
-            // A,C |- new id():id
             /*
              * Grammar production:
              * f0 -> "new"
@@ -539,19 +549,18 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
             t.outputAssignment(imm, CodeGenHelper.HeapAllocZ(cr.sizeOfClass(id.toString())));
             t.outputAssignment(imm.dereference(), ":vmt_" + id.toString());
         } else if (c.which == 7) { // NotExpression()
-            // A,C |- e:boolean -> A,C |- !e:boolean
             /*
              * Grammar production:
              * f0 -> "!"
              * f1 -> Expression()
              */
             VariableLabel rhs = ((NotExpression) c.choice).f1.accept(this, p);
+            rhs = CodeGenHelper.retrieveDerefOrFuncCall(rhs, p);
 
             /*
-                t.0 = Sub(1 rhs)
+                receivee = Sub(1 rhs)
              */
-            imm = lm.newTempVariable();
-            t.outputAssignment(imm, CodeGenHelper.Sub("1", rhs.toString()));
+            imm = lm.functionCall(CodeGenHelper.Sub("1", rhs.toString()));
         } else { // c.which == 8, BracketExpression()
             /*
              * Grammar production:
