@@ -16,9 +16,9 @@ java -cp ./:./parser/:./typecheck/ Typecheck < java-file
 To generate the `hw1.tgz` required by `Phase1Tester`:
 
 ```
-mkdir hw1
+mkdir -p hw1/typecheck
 cp -r typecheck hw1/
-cp hw1/typecheck/Typecheck.java hw1/
+mv hw1/typecheck/Typecheck.java hw1/
 tar zcf hw1.tgz hw1/
 rm -rf hw1
 ```
@@ -64,4 +64,43 @@ To compile and run manually:
 ```
 javac parser/*.java J2V.java 
 java -cp ./:./parser/ J2V < java-file > vapor-file
+```
+
+To generate the `hw2.tgz` required by `Phase2Tester`:
+
+```
+mkdir -p hw2/typecheck/
+mkdir -p hw2/codegen/
+cp -r codegen hw2/codegen/
+cp -r typecheck hw2/typecheck/
+cp J2V.java hw2/
+rm hw2/typecheck/Typecheck.java
+tar zcf hw2.tgz hw2/
+rm -rf hw2
+```
+
+### Test Result
+
+```
+===============
+Deleting old output directory "./Output"...
+Extracting files from "../hw2.tgz"...
+Compiling program with 'javac'...
+==== Running Tests ====
+1-PrintLiteral: pass
+2-Add: pass
+3-Call: pass
+4-Vars: pass
+5-OutOfBounds: pass
+BinaryTree: pass
+BubbleSort: pass
+Factorial: pass
+LinearSearch: pass
+LinkedList: pass
+MoreThan4: pass
+QuickSort: pass
+TreeVisitor: pass
+==== Results ====
+Passed 13/13 test cases
+- Submission Size = 79 kB
 ```
