@@ -31,7 +31,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
      */
     @Override
     public ExpressionType visit(MainClass n, Scope s) {
-        Symbol id = Symbol.fromString(Helper.className(n));
+        Symbol id = Symbol.fromString(TypeCheckHelper.className(n));
         Binder b = s.lookup(id);
 
         n.f15.accept(this, b.getScope());
@@ -48,7 +48,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
      */
     @Override
     public ExpressionType visit(ClassDeclaration n, Scope s) {
-        Symbol id = Symbol.fromString(Helper.className(n));
+        Symbol id = Symbol.fromString(TypeCheckHelper.className(n));
         Binder b = s.lookup(id);
 
         n.f4.accept(this, b.getScope());
@@ -67,7 +67,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
      */
     @Override
     public ExpressionType visit(ClassExtendsDeclaration n, Scope s) {
-        Symbol id = Symbol.fromString(Helper.className(n));
+        Symbol id = Symbol.fromString(TypeCheckHelper.className(n));
         Binder b = s.lookup(id);
 
         n.f6.accept(this, b.getScope());
@@ -91,7 +91,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
      */
     @Override
     public ExpressionType visit(MethodDeclaration n, Scope s) {
-        Symbol id = Symbol.fromString(Helper.methodName(n));
+        Symbol id = Symbol.fromString(TypeCheckHelper.methodName(n));
         Binder b = s.lookup(id);
         Scope ns = b.getScope();
 
@@ -100,7 +100,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
         // Check return value type
         // A,C |- e:t
         ExpressionType retType = n.f10.accept(this, ns);
-        if (!Helper.makeExpressionType(n.f1).equals(retType)) {
+        if (!TypeCheckHelper.makeExpressionType(n.f1).equals(retType)) {
             ErrorMessage.complain("Return type mismatch. " +
                     "In method: " + id.toString());
         }
@@ -116,16 +116,16 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
     // Rule 23
     @Override
     public ExpressionType visit(AssignmentStatement n, Scope s) {
-        Symbol id = Symbol.fromString(Helper.identifierName(n.f0));
+        Symbol id = Symbol.fromString(TypeCheckHelper.identifierName(n.f0));
         Binder b = s.lookup(id);
 
         // A(id) = t1
         if (b != null) {
-            ExpressionType idt = Helper.makeExpressionType(Helper.extractTypeFromParamOrVar(b.getType()));
+            ExpressionType idt = TypeCheckHelper.makeExpressionType(TypeCheckHelper.extractTypeFromParamOrVar(b.getType()));
             ExpressionType et = n.f2.accept(this, s);
 
             // A,C |- e:t2
-            if (!et.getType().equals(Helper.UNDEFINED)) {
+            if (!et.getType().equals(TypeCheckHelper.UNDEFINED)) {
                 // t2 <= t1
                 if (!idt.equals(et)) {
                     // if idtn and etn are both classes
@@ -163,25 +163,25 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
     // Rule 24
     @Override
     public ExpressionType visit(ArrayAssignmentStatement n, Scope s) {
-        Symbol id = Symbol.fromString(Helper.identifierName(n.f0));
+        Symbol id = Symbol.fromString(TypeCheckHelper.identifierName(n.f0));
         Binder b = s.lookup(id);
 
         // A(id) = int[]
         if (b != null) {
             VarDeclaration vd = (VarDeclaration) b.getType();
-            ExpressionType idt = Helper.makeExpressionType(vd.f0);
+            ExpressionType idt = TypeCheckHelper.makeExpressionType(vd.f0);
 
-            if (idt.getType().equals(Helper.INT_ARRAY)) {
+            if (idt.getType().equals(TypeCheckHelper.INT_ARRAY)) {
                 ExpressionType indext = n.f2.accept(this, s);
 
                 // A,C |- e1:int
-                if (!indext.getType().equals(Helper.UNDEFINED)) {
-                    if (indext.getType().equals(Helper.INT)) {
+                if (!indext.getType().equals(TypeCheckHelper.UNDEFINED)) {
+                    if (indext.getType().equals(TypeCheckHelper.INT)) {
                         ExpressionType et = n.f5.accept(this, s);
 
                         // A,C |- e2:int
-                        if (!et.getType().equals(Helper.UNDEFINED)) {
-                            if (!et.getType().equals(Helper.INT)) {
+                        if (!et.getType().equals(TypeCheckHelper.UNDEFINED)) {
+                            if (!et.getType().equals(TypeCheckHelper.INT)) {
                                 ErrorMessage.complain("ArrayAssignment: RHS type mismatch. " +
                                         "RHS: " + et.getType());
                             }
@@ -222,7 +222,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
         ExpressionType condt = n.f2.accept(this, s);
 
         // A,C |- e:boolean
-        if (condt.getType().equals(Helper.BOOLEAN)) {
+        if (condt.getType().equals(TypeCheckHelper.BOOLEAN)) {
             // A,C |- s1
             n.f4.accept(this, s);
             // A,C |- s2
@@ -247,7 +247,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
         ExpressionType condt = n.f2.accept(this, s);
 
         // A,C |- e:boolean
-        if (condt.getType().equals(Helper.BOOLEAN)) {
+        if (condt.getType().equals(TypeCheckHelper.BOOLEAN)) {
             // A,C |- s
             n.f4.accept(this, s);
         } else {
@@ -270,8 +270,8 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
         ExpressionType expt = n.f2.accept(this, s);
 
         // A,C |- e:int
-        if (!expt.getType().equals(Helper.INT)) {
-            ErrorMessage.complain("PrintStatement: Expression is not boolean type. " +
+        if (!expt.getType().equals(TypeCheckHelper.INT)) {
+            ErrorMessage.complain("PrintStatement: Expression is not int type. " +
                     "Type: " + expt.getType());
         }
         return null;
@@ -305,13 +305,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
         ExpressionType rhs = n.f2.accept(this, s);
 
         // A,C |- p1:boolean; A,C |- p2:boolean
-        if (!lhs.getType().equals(Helper.BOOLEAN) || !rhs.getType().equals(Helper.BOOLEAN)) {
+        if (!lhs.getType().equals(TypeCheckHelper.BOOLEAN) || !rhs.getType().equals(TypeCheckHelper.BOOLEAN)) {
             ErrorMessage.complain("AndExpression: LHS or RHS is not boolean type.");
         }
 
         // But anyway, we treat it as boolean
         // A,C |- p1 && p2:boolean
-        return new ExpressionType(n, Helper.BOOLEAN);
+        return new ExpressionType(n, TypeCheckHelper.BOOLEAN);
     }
 
     /*
@@ -326,13 +326,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
         ExpressionType rhs = n.f2.accept(this, s);
 
         // A,C |- p1:int; A,C |- p2:int
-        if (!lhs.getType().equals(Helper.INT) || !rhs.getType().equals(Helper.INT)) {
+        if (!lhs.getType().equals(TypeCheckHelper.INT) || !rhs.getType().equals(TypeCheckHelper.INT)) {
             ErrorMessage.complain("CompareExpression: LHS or RHS is not int type.");
         }
 
         // But anyway, we treat it as boolean
         // A,C |- p1<p2:boolean
-        return new ExpressionType(n, Helper.BOOLEAN);
+        return new ExpressionType(n, TypeCheckHelper.BOOLEAN);
     }
 
     /*
@@ -347,13 +347,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
         ExpressionType rhs = n.f2.accept(this, s);
 
         // A,C |- p1:int; A,C |- p2:int
-        if (!lhs.getType().equals(Helper.INT) || !rhs.getType().equals(Helper.INT)) {
+        if (!lhs.getType().equals(TypeCheckHelper.INT) || !rhs.getType().equals(TypeCheckHelper.INT)) {
             ErrorMessage.complain("PlusExpression: LHS or RHS is not int type.");
         }
 
         // But anyway, we treat it as int
         // A,C |- p1+p2:int
-        return new ExpressionType(n, Helper.INT);
+        return new ExpressionType(n, TypeCheckHelper.INT);
     }
 
     /*
@@ -368,13 +368,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
         ExpressionType rhs = n.f2.accept(this, s);
 
         // A,C |- p1:int; A,C |- p2:int
-        if (!lhs.getType().equals(Helper.INT) || !rhs.getType().equals(Helper.INT)) {
+        if (!lhs.getType().equals(TypeCheckHelper.INT) || !rhs.getType().equals(TypeCheckHelper.INT)) {
             ErrorMessage.complain("MinusExpression: LHS or RHS is not int type.");
         }
 
         // But anyway, we treat it as int
         // A,C |- p1-p2:int
-        return new ExpressionType(n, Helper.INT);
+        return new ExpressionType(n, TypeCheckHelper.INT);
     }
 
     /*
@@ -389,13 +389,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
         ExpressionType rhs = n.f2.accept(this, s);
 
         // A,C |- p1:int; A,C |- p2:int
-        if (!lhs.getType().equals(Helper.INT) || !rhs.getType().equals(Helper.INT)) {
+        if (!lhs.getType().equals(TypeCheckHelper.INT) || !rhs.getType().equals(TypeCheckHelper.INT)) {
             ErrorMessage.complain("TimesExpression: LHS or RHS is not int type.");
         }
 
         // But anyway, we treat it as int
         // A,C |- p1*p2:int
-        return new ExpressionType(n, Helper.INT);
+        return new ExpressionType(n, TypeCheckHelper.INT);
     }
 
 
@@ -412,13 +412,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
         ExpressionType index = n.f2.accept(this ,s);
 
         // A,C |- p1:int[]; A,C |- p2:int
-        if (!array.getType().equals(Helper.INT_ARRAY) || !index.getType().equals(Helper.INT)) {
+        if (!array.getType().equals(TypeCheckHelper.INT_ARRAY) || !index.getType().equals(TypeCheckHelper.INT)) {
             ErrorMessage.complain("ArrayLookup: Array is not int[] type or Index is not int type.");
         }
 
         // But anyway, we treat it as int
         // A,C |- p1[p2]:int
-        return new ExpressionType(n, Helper.INT);
+        return new ExpressionType(n, TypeCheckHelper.INT);
     }
 
     /*
@@ -432,13 +432,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
         ExpressionType array = n.f0.accept(this, s);
 
         // A,C |- p:int[]
-        if (!array.getType().equals(Helper.INT_ARRAY)) {
+        if (!array.getType().equals(TypeCheckHelper.INT_ARRAY)) {
             ErrorMessage.complain("ArrayLength: Array is not int[] type.");
         }
 
         // But anyway, we treat it as int
         // A,C |- p.length:int
-        return new ExpressionType(n, Helper.INT);
+        return new ExpressionType(n, TypeCheckHelper.INT);
     }
 
     /*
@@ -455,13 +455,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
         ExpressionType p = n.f0.accept(this, s);
         String type;
 
-        if (Helper.isBasicType(p.getType())) {
-            type = Helper.UNDEFINED;
+        if (TypeCheckHelper.isBasicType(p.getType())) {
+            type = TypeCheckHelper.UNDEFINED;
             ErrorMessage.complain("MessageSend: Attempt to calling method on basic type.");
-        } else if (p.getType().equals(Helper.UNDEFINED)) {
-            type = Helper.UNDEFINED;
+        } else if (p.getType().equals(TypeCheckHelper.UNDEFINED)) {
+            type = TypeCheckHelper.UNDEFINED;
             ErrorMessage.complain("MessageSend: Attempt to calling method on a undefined identifier. " +
-                    "Identifier: " + Helper.identifierName((Identifier) p.getNode()));
+                    "Identifier: " + TypeCheckHelper.identifierName((Identifier) p.getNode()));
         } else { // p is Identifier
             // A,C |- p:D
             Binder b = s.lookup(Symbol.fromString(p.getType()));
@@ -469,11 +469,11 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
                 Scope cs = b.getScope();
 
                 // methodtype(D,id)=(t1',...,tn')->t
-                Symbol m = Symbol.fromString(Helper.identifierName(n.f2));
+                Symbol m = Symbol.fromString(TypeCheckHelper.identifierName(n.f2));
                 Binder mb = cs.lookup(m);
 
                 if (mb != null) {
-                    MethodType mt = Helper.methodType((MethodDeclaration) mb.getType());
+                    MethodType mt = TypeCheckHelper.methodType((MethodDeclaration) mb.getType());
 
                     // A,C |- ei:ti, ti <= ti'
                     if (n.f4.present()) {
@@ -504,7 +504,7 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
                                 // A,C |- ei:ti; ti <= ti'
                                 // type mismatch?
                                 if (!reft.equals(actt)) {
-                                    if (!Helper.isBasicType(reft) && !Helper.isBasicType(actt)) {
+                                    if (!TypeCheckHelper.isBasicType(reft) && !TypeCheckHelper.isBasicType(actt)) {
                                         if (!SubtypingRelation.isSubtyping(Symbol.fromString(actt),
                                                 Symbol.fromString(reft))) {
                                             ErrorMessage.complain("MessageSend: Parameters type mismatch (no inheritance) " +
@@ -526,12 +526,12 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
                     // A,C |- p.id(e1,...,en):t
                     type = mt.getReturnType().getType();
                 } else {
-                    type = Helper.UNDEFINED;
+                    type = TypeCheckHelper.UNDEFINED;
                     ErrorMessage.complain("MessageSend: Method " + m.toString() + " is not defined " +
-                            "in class " + Helper.className(cs.getNodeBound()));
+                            "in class " + TypeCheckHelper.className(cs.getNodeBound()));
                 }
             } else {
-                type = Helper.UNDEFINED;
+                type = TypeCheckHelper.UNDEFINED;
                 ErrorMessage.complain("MessageSend: Class not found.");
             }
         }
@@ -558,29 +558,29 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
 
         if (c.which == 0) { // IntegerLiteral()
             // A,C |- c:int
-            type = Helper.INT;
+            type = TypeCheckHelper.INT;
         } else if (c.which == 1) { // TrueLiteral()
             // A,C |- true:boolean
-            type = Helper.BOOLEAN;
+            type = TypeCheckHelper.BOOLEAN;
         } else if (c.which == 2) { // FalseLiteral()
             // A,C |- false:boolean
-            type = Helper.BOOLEAN;
+            type = TypeCheckHelper.BOOLEAN;
         } else if (c.which == 3) { // Identifier()
             // id in dom(A) -> A,C |- id:A(id)
-            Symbol id = Symbol.fromString(Helper.identifierName((Identifier) c.choice));
+            Symbol id = Symbol.fromString(TypeCheckHelper.identifierName((Identifier) c.choice));
             Binder b = s.lookup(id);
 
             if (b != null) {
                 // TODO: check whether VarDeclaration & FormalParameter is enough.
-                return Helper.makeExpressionType(Helper.extractTypeFromParamOrVar(b.getType()));
+                return TypeCheckHelper.makeExpressionType(TypeCheckHelper.extractTypeFromParamOrVar(b.getType()));
             } else {
-                type = Helper.UNDEFINED;
+                type = TypeCheckHelper.UNDEFINED;
                 ErrorMessage.complain("PrimaryExpression: Identifier is not defined. " +
                         "Identifier: " + id.toString());
             }
         } else if (c.which == 4) { // ThisExpression()
             // A,C |- this:C
-            type = Helper.className(s.getParent().getNodeBound());
+            type = TypeCheckHelper.className(s.getParent().getNodeBound());
         } else if (c.which == 5) { // ArrayAllocationExpression()
             // A,C |- e:int -> A,C |- new int[e]:int[]
             /*
@@ -593,13 +593,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
              */
             ExpressionType et = ((ArrayAllocationExpression) c.choice).f3.accept(this, s);
 
-            if (!et.getType().equals(Helper.INT)) {
+            if (!et.getType().equals(TypeCheckHelper.INT)) {
                 ErrorMessage.complain("ArrayAllocationExpression: Index type mismatch. " +
                         "Type: " + et.getType());
             }
 
             // But anyway we treat it as int[].
-            type = Helper.INT_ARRAY;
+            type = TypeCheckHelper.INT_ARRAY;
 
         } else if (c.which == 6) { // AllocationExpression()
             // A,C |- new id():id
@@ -610,12 +610,12 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
              * f2 -> "("
              * f3 -> ")"
              */
-            Symbol id = Symbol.fromString(Helper.identifierName(((AllocationExpression) c.choice).f1));
+            Symbol id = Symbol.fromString(TypeCheckHelper.identifierName(((AllocationExpression) c.choice).f1));
 
             if (SubtypingRelation.contains(id)) {
                 type = id.toString();
             } else {
-                type = Helper.UNDEFINED;
+                type = TypeCheckHelper.UNDEFINED;
                 ErrorMessage.complain("AllocationExpression: Identifier is not defined. " +
                         "Identifier: " + id.toString());
             }
@@ -629,13 +629,13 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
              */
             ExpressionType et = ((NotExpression) c.choice).f1.accept(this, s);
 
-            if (!et.getType().equals(Helper.BOOLEAN)) {
+            if (!et.getType().equals(TypeCheckHelper.BOOLEAN)) {
                 ErrorMessage.complain("NotExpression: Expression is not boolean type. " +
                         "Type: " + et.getType());
             }
 
             // But anyway we treat it as boolean
-            type = Helper.BOOLEAN;
+            type = TypeCheckHelper.BOOLEAN;
         } else { // c.which == 8, BracketExpression()
             // A,C |- e:t -> A,C |- (e):t
             /*
@@ -657,10 +657,10 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
     @Override
     public ExpressionType visit(FormalParameter n, Scope s) {
         // Check if Type() is defined.
-        Symbol id = Symbol.fromString(Helper.identifierName(n.f1));
-        ExpressionType rt = Helper.makeExpressionType(n.f0);
+        Symbol id = Symbol.fromString(TypeCheckHelper.identifierName(n.f1));
+        ExpressionType rt = TypeCheckHelper.makeExpressionType(n.f0);
 
-        if (!Helper.isBasicType(rt.getType())) {
+        if (!TypeCheckHelper.isBasicType(rt.getType())) {
             // Check if return type (class in this case) exist
             if (!SubtypingRelation.contains(Symbol.fromString(rt.getType()))) {
                 ErrorMessage.complain("FormalParameter: Type is not defined. " +
@@ -678,10 +678,10 @@ public class SecondPhaseVisitor extends GJDepthFirst<ExpressionType, Scope> {
     @Override
     public ExpressionType visit(VarDeclaration n, Scope s) {
         // Check if Type() is defined.
-        Symbol id = Symbol.fromString(Helper.identifierName(n.f1));
-        ExpressionType rt = Helper.makeExpressionType(n.f0);
+        Symbol id = Symbol.fromString(TypeCheckHelper.identifierName(n.f1));
+        ExpressionType rt = TypeCheckHelper.makeExpressionType(n.f0);
 
-        if (!Helper.isBasicType(rt.getType())) {
+        if (!TypeCheckHelper.isBasicType(rt.getType())) {
             // Check if return type (class in this case) exist
             if (!SubtypingRelation.contains(Symbol.fromString(rt.getType()))) {
                 ErrorMessage.complain("VarDeclaration: Type is not defined. " +

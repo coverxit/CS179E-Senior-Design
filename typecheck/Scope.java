@@ -44,6 +44,10 @@ public class Scope {
             return null;
     }
 
+    public Iterator<Binder> symbolIterator() {
+        return table.values().iterator();
+    }
+
     public Scope getParent() {
         return parent;
     }
