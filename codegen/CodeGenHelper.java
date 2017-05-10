@@ -121,8 +121,8 @@ public class CodeGenHelper {
             if t.0 goto :bounds0
                 Error("array index out of bounds");
             bounds0:
-                t.0 = MulS(ind 4)
-                t.0 = Add(t.0 l)
+            t.0 = MulS(ind 4)
+            t.0 = Add(t.0 l)
          */
         l = retrieveDerefOrFuncCall(l, p);
         t.outputAssignment(var, l.dereference());
@@ -134,12 +134,10 @@ public class CodeGenHelper {
         t.getOutput().decreaseIndent();
 
         t.outputJumpLabel(jmp);
-        t.getOutput().increaseIndent();
         t.outputAssignment(var, MulS(ind.toString(), "4"));
         t.outputAssignment(var, Add(var.toString(), l.toString()));
-        t.getOutput().decreaseIndent();
 
-        // Return "t.0+4"
-        return lm.localVariable(4, var.toString());
+        // Return "[t.0+4]"
+        return lm.localVariable(4, var.toString()).dereference();
     }
 }
