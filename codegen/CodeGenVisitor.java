@@ -169,8 +169,8 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
 
         VariableLabel lhs = CodeGenHelper.identifierLabel(id, p);
         VariableLabel rhs = n.f2.accept(this, p);
-        // "[this+n] = call t.0(...)" & "[this+n] = [this+m]" are not allowed.
-        if (lhs.isDereference() && (rhs.isFunctionCall() || rhs.isFunctionCall())) {
+        // "[this+n] = call t.i(...)" & "[this+n] = [this+m]" are not allowed.
+        if (lhs.isDereference() && (rhs.isFunctionCall() || rhs.isDereference())) {
             rhs = CodeGenHelper.retrieveDerefOrFuncCall(rhs, p);
         }
         t.outputAssignment(lhs, rhs);
@@ -196,6 +196,10 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
         VariableLabel elem = CodeGenHelper.boundsCheck(imm, indlbl, p); // Bounds check then
         VariableLabel rhs = n.f5.accept(this, p); // Calculate rhs finally
 
+        // "[t.i+n] = call t.j(...)" & "[t.i+n] = [t.j+m]" are not allowed.
+        if (rhs.isFunctionCall() || rhs.isDereference()) {
+            rhs = CodeGenHelper.retrieveDerefOrFuncCall(rhs, p);
+        }
         t.outputAssignment(elem, rhs);
         return null;
     }
