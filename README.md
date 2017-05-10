@@ -16,6 +16,7 @@ java -cp ./:./parser/:./typecheck/ Typecheck < java-file
 To generate the `hw1.tgz` required by `Phase1Tester`:
 
 ```
+mkdir hw1
 cp -r typecheck hw1/
 mv hw1/typecheck/Typecheck.java hw1/
 tar zcf hw1.tgz hw1/
@@ -68,6 +69,7 @@ java -cp ./:./parser/ J2V < java-file > vapor-file
 To generate the `hw2.tgz` required by `Phase2Tester`:
 
 ```
+mkdir hw2
 cp -r codegen hw2/
 cp -r typecheck hw2/
 cp J2V.java hw2/
