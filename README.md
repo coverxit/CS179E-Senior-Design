@@ -203,3 +203,13 @@ TreeVisitor: pass
 ==== Results ====
 Passed 8/8 test cases
 ```
+
+## Phase 3: Register Allocation
+### Instructions
+
+To compile and run manually:
+
+```bash
+javac -cp "./;./parser/varpor-parser.jar" V2VM.java 
+java -cp "./;./parser/vapor-parser.jar" V2VM < vapor-file > vaporM-file
+```
