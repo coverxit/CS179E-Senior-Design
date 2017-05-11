@@ -72,7 +72,7 @@ To generate the `hw2.tgz` required by `Phase2Tester`:
 mkdir hw2
 cp -r codegen hw2/
 cp -r typecheck hw2/
-cp J2V.java hw2/
+mv hw2/codegen/J2V.java hw2/
 rm hw2/typecheck/Typecheck.java
 tar zcf hw2.tgz hw2/
 rm -rf hw2
