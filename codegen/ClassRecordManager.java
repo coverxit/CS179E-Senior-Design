@@ -19,7 +19,7 @@ public class ClassRecordManager {
     }
 
     public int lookupMethodOffset(String c, String m) {
-        return new ArrayList<String>(vtable.get(c).keySet()).indexOf(m) * 4;
+        return new ArrayList<>(vtable.get(c).keySet()).indexOf(m) * 4;
     }
 
     public int lookupVariableOffset(String c, String v) {
