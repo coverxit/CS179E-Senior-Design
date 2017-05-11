@@ -140,6 +140,10 @@ echo ==== Results ====
 echo Passed ${passCount}/${#TESTS[@]} test cases
 ```
 
+Note that since there is no lower bounds checking of arrays in the provided vapor, 
+we have to manually remove the corresponding lower bounds checking code (in `CodeGenHelper.boundsCheck`)
+before running the above script.
+
 The output of the above script:
 ```
 ===============

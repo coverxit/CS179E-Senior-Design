@@ -86,6 +86,7 @@ public class CodeGenHelper {
         LabelManager lm = t.getLabelManager();
         VariableLabel var = l;
 
+        // `this` is not checked
         if (!l.isThisPointer()) {
             JumpLabel jmp = lm.newNullJump();
 
@@ -113,27 +114,40 @@ public class CodeGenHelper {
         Translator t = p.getTranslator();
         LabelManager lm = t.getLabelManager();
         VariableLabel var = lm.newTempVariable();
-        JumpLabel jmp = lm.newBoundsJump();
+        JumpLabel jmp1 = lm.newBoundsJump();
+        JumpLabel jmp2 = lm.newBoundsJump();
 
         /*
             t.0 = [l]
-            t.0 = Lt(ind t.0)
+            t.0 = LtS(ind t.0)
             if t.0 goto :bounds0
                 Error("array index out of bounds");
             bounds0:
+            t.0 = LtS(-1 ind)
+            if t.0 goto :bounds1
+                Error("array index out of bounds");
+            bounds1:
             t.0 = MulS(ind 4)
             t.0 = Add(t.0 l)
+            receivee = [t.0+4]
          */
         l = retrieveDerefOrFuncCall(l, p);
         t.outputAssignment(var, l.dereference());
-        t.outputAssignment(var, Lt(ind.toString(), var.toString()));
+        t.outputAssignment(var, LtS(ind.toString(), var.toString()));
 
-        t.outputIf(var, jmp);
+        t.outputIf(var, jmp1);
         t.getOutput().increaseIndent();
         t.outputError("array index out of bounds");
         t.getOutput().decreaseIndent();
 
-        t.outputJumpLabel(jmp);
+        t.outputJumpLabel(jmp1);
+        t.outputAssignment(var, LtS("-1", ind.toString()));
+        t.outputIf(var, jmp2);
+        t.getOutput().increaseIndent();
+        t.outputError("array index out of bounds");
+        t.getOutput().decreaseIndent();
+
+        t.outputJumpLabel(jmp2);
         t.outputAssignment(var, MulS(ind.toString(), "4"));
         t.outputAssignment(var, Add(var.toString(), l.toString()));
 
