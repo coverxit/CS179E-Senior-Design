@@ -35,7 +35,11 @@ public class VariableLabel {
     }
 
     public boolean isThisPointer() {
-        return base != null && base.equals("this") && no == -1 && !deref && !call;
+        return base != null && base.equals("this") && no < 0 && !deref && !call;
+    }
+
+    public boolean isTempVariable() {
+        return base == null && no >= 0 && !deref && !call;
     }
 
     public static VariableLabel TempVariable(int n) {

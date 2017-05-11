@@ -426,9 +426,8 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
         VariableLabel array = n.f0.accept(this, p);
         VariableLabel imm = CodeGenHelper.nullCheck(array, p);
 
-        // t.0 = [t.0]
-        t.outputAssignment(imm, imm.dereference());
-        return imm;
+        // [t.0]
+        return imm.dereference();
     }
 
     /*
