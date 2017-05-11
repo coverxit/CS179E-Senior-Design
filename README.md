@@ -104,7 +104,7 @@ Passed 13/13 test cases
 - Submission Size = 79 kB
 ```
 
-Custom shell script for checking if the generated vapor is identical to the provided one (in `Phase3Tests`):
+Shell script for checking if the generated vapor is identical to the provided one (in `Phase3Tests`):
 ```bash
 #!/bin/sh
 
