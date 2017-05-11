@@ -114,26 +114,26 @@ javac parser/\*.java J2V.java
 
 echo ==== Running Tests ===
 TESTS=(
-	BinaryTree
-	BubbleSort
-	Factorial
-	LinearSearch
-	LinkedList
-	MoreThan4
-	QuickSort
-	TreeVisitor
+    BinaryTree
+    BubbleSort
+    Factorial
+    LinearSearch
+    LinkedList
+    MoreThan4
+    QuickSort
+    TreeVisitor
 )
 
 passCount=0
 for t in ${TESTS[@]}; do
-	java -cp "./;./parser/" J2V < Phase2Tests/${t}.java > ${t}.vapor
-	diff --ignore-blank-lines --strip-trailing-cr ${t}.vapor Phase3Tests/${t}.vapor &>/dev/null
-	if [ $? -eq 0 ]; then
-		echo ${t}: pass
-		(( passCount += 1 ))
-	else
-		echo ${t}: FAIL
-	fi
+    java -cp "./;./parser/" J2V < Phase2Tests/${t}.java > ${t}.vapor
+    diff --ignore-blank-lines --strip-trailing-cr ${t}.vapor Phase3Tests/${t}.vapor &>/dev/null
+    if [ $? -eq 0 ]; then
+        echo ${t}: pass
+        (( passCount += 1 ))
+    else
+        echo ${t}: FAIL
+    fi
 done
 
 echo ==== Results ====
