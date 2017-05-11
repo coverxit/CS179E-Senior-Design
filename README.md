@@ -144,10 +144,10 @@ Note that since there is no lower bounds checking of arrays in the provided vapo
 we have to manually remove the corresponding lower bounds checking code (in `CodeGenHelper.boundsCheck`)
 before running the above script.
 
-The `diff` result between the `CodeGenHelper.boundsCheck` without lower bounds checking and the one with it:
+The `diff` result between the `CodeGenHelper.boundsCheck` with lower bounds checking and the one without it:
 ```diff
---- CodeGenHelper-WithOutLowerBoundCheck.java
-+++ CodeGenHelper-WithLowerBoundsCheck.java
+--- CodeGenHelper-WithLowerBoundsCheck.java
++++ CodeGenHelper-WithOutLowerBoundCheck.java
  public static VariableLabel boundsCheck(VariableLabel l, VariableLabel ind, CodeGenPair p) {
      Translator t = p.getTranslator();
      LabelManager lm = t.getLabelManager();
