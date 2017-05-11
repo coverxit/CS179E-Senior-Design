@@ -147,7 +147,7 @@ before running the above script.
 The `diff` result between the `CodeGenHelper.boundsCheck` with lower bounds checking and the one without it:
 ```diff
 --- CodeGenHelper-WithLowerBoundsCheck.java
-+++ CodeGenHelper-WithOutLowerBoundCheck.java
++++ CodeGenHelper-WithoutLowerBoundCheck.java
  public static VariableLabel boundsCheck(VariableLabel l, VariableLabel ind, CodeGenPair p) {
      Translator t = p.getTranslator();
      LabelManager lm = t.getLabelManager();
@@ -156,7 +156,6 @@ The `diff` result between the `CodeGenHelper.boundsCheck` with lower bounds chec
 -    JumpLabel jmp2 = lm.newBoundsJump();
 +    JumpLabel jmp = lm.newBoundsJump();
 
--
      l = retrieveDerefOrFuncCall(l, p);
      t.outputAssignment(var, l.dereference());
 -    t.outputAssignment(var, LtS(ind.toString(), var.toString()));
