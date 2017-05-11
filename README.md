@@ -10,7 +10,7 @@ To compile and run manually:
 
 ```
 javac parser/*.java typecheck/Typecheck.java
-java -cp ./:./parser/:./typecheck/ Typecheck < java-file
+java -cp "./;./parser/;./typecheck/" Typecheck < java-file
 ```
 
 To generate the `hw1.tgz` required by `Phase1Tester`:
@@ -63,7 +63,7 @@ To compile and run manually:
 
 ```
 javac parser/*.java J2V.java 
-java -cp ./:./parser/ J2V < java-file > vapor-file
+java -cp "./;./parser/" J2V < java-file > vapor-file
 ```
 
 To generate the `hw2.tgz` required by `Phase2Tester`:
