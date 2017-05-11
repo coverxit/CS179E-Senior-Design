@@ -8,14 +8,14 @@ Link to project instructions: http://www.cs.ucr.edu/~lesani/teaching/cp/cp.html
 
 To compile and run manually:
 
-```
+```bash
 javac parser/*.java typecheck/Typecheck.java
 java -cp "./;./parser/;./typecheck/" Typecheck < java-file
 ```
 
 To generate the `hw1.tgz` required by `Phase1Tester`:
 
-```
+```bash
 mkdir hw1
 cp -r typecheck hw1/
 mv hw1/typecheck/Typecheck.java hw1/
@@ -61,14 +61,14 @@ TreeVisitor [ok]: pass
 
 To compile and run manually:
 
-```
+```bash
 javac parser/*.java J2V.java 
 java -cp "./;./parser/" J2V < java-file > vapor-file
 ```
 
 To generate the `hw2.tgz` required by `Phase2Tester`:
 
-```
+```bash
 mkdir hw2
 cp -r codegen hw2/
 cp -r typecheck hw2/
@@ -102,4 +102,50 @@ TreeVisitor: pass
 ==== Results ====
 Passed 13/13 test cases
 - Submission Size = 79 kB
+```
+
+Custom shell script for checking if the generated vapor is identical to the provided one (in `Phase3Tests`):
+```bash
+#!/bin/sh
+
+echo ===============
+echo Compiling program with 'javac'...
+javac parser/\*.java J2V.java
+
+echo ==== Running Tests ===
+TESTS=(
+	BinaryTree
+	BubbleSort
+	Factorial
+	LinearSearch
+	LinkedList
+	MoreThan4
+	QuickSort
+	TreeVisitor
+)
+
+for t in ${TESTS[@]}; do
+	java -cp "./;./parser/" J2V < Phase2Tests/${t}.java > ${t}.vapor
+	diff --ignore-blank-lines --strip-trailing-cr ${t}.vapor Phase3Tests/${t}.vapor &>/dev/null
+	if [ $? -eq 0 ]; then
+		echo ${t}: identical
+	else
+		echo ${t}: different
+	fi
+done
+```
+
+The output of the above script:
+```
+===============
+Compiling program with javac...
+==== Running Tests ===
+BinaryTree: identical
+BubbleSort: identical
+Factorial: identical
+LinearSearch: identical
+LinkedList: identical
+MoreThan4: identical
+QuickSort: identical
+TreeVisitor: identical
 ```
