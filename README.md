@@ -62,8 +62,8 @@ TreeVisitor [ok]: pass
 To compile and run manually:
 
 ```bash
-javac parser/*.java J2V.java 
-java -cp "./;./parser/" J2V < java-file > vapor-file
+javac parser/*.java codegen/J2V.java 
+java -cp "./;./parser/;./codegen/" J2V < java-file > vapor-file
 ```
 
 To generate the `hw2.tgz` required by `Phase2Tester`:
@@ -111,7 +111,7 @@ Shell script for checking if the generated vapor is identical to the provided on
 
 echo ===============
 echo Compiling program with 'javac'...
-javac parser/\*.java J2V.java
+javac parser/\*.java codegen/J2V.java 
 
 echo ==== Running Tests ===
 TESTS=(
@@ -127,7 +127,7 @@ TESTS=(
 
 passCount=0
 for t in ${TESTS[@]}; do
-    java -cp "./;./parser/" J2V < Phase2Tests/${t}.java > ${t}.vapor
+    java -cp "./;./parser/;./codegen/" J2V < Phase2Tests/${t}.java > ${t}.vapor
     diff --ignore-blank-lines --strip-trailing-cr ${t}.vapor Phase3Tests/${t}.vapor &>/dev/null
     if [ $? -eq 0 ]; then
         echo ${t}: pass
