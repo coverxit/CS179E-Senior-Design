@@ -105,6 +105,7 @@ Passed 13/13 test cases
 ```
 
 Shell script for checking if the generated vapor is identical to the provided one (in `Phase3Tests`):
+
 ```bash
 #!/bin/sh
 
@@ -145,6 +146,7 @@ we have to manually remove the corresponding lower bounds checking code (in `Cod
 before running the above script.
 
 The `diff` result between the `CodeGenHelper.boundsCheck` with lower bounds checking and the one without it:
+
 ```diff
 --- CodeGenHelper-WithLowerBoundsCheck.java
 +++ CodeGenHelper-WithoutLowerBoundCheck.java
@@ -185,6 +187,7 @@ The `diff` result between the `CodeGenHelper.boundsCheck` with lower bounds chec
 ```
 
 The output of the above script:
+
 ```
 ===============
 Compiling program with javac...
