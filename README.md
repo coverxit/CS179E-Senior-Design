@@ -124,15 +124,20 @@ TESTS=(
 	TreeVisitor
 )
 
+passCount=0
 for t in ${TESTS[@]}; do
 	java -cp "./;./parser/" J2V < Phase2Tests/${t}.java > ${t}.vapor
 	diff --ignore-blank-lines --strip-trailing-cr ${t}.vapor Phase3Tests/${t}.vapor &>/dev/null
 	if [ $? -eq 0 ]; then
-		echo ${t}: identical
+		echo ${t}: pass
+		(( passCount += 1 ))
 	else
-		echo ${t}: different
+		echo ${t}: FAIL
 	fi
 done
+
+echo ==== Results ====
+echo Passed ${passCount}/${#TESTS[@]} test cases
 ```
 
 The output of the above script:
@@ -140,12 +145,14 @@ The output of the above script:
 ===============
 Compiling program with javac...
 ==== Running Tests ===
-BinaryTree: identical
-BubbleSort: identical
-Factorial: identical
-LinearSearch: identical
-LinkedList: identical
-MoreThan4: identical
-QuickSort: identical
-TreeVisitor: identical
+BinaryTree: pass
+BubbleSort: pass
+Factorial: pass
+LinearSearch: pass
+LinkedList: pass
+MoreThan4: pass
+QuickSort: pass
+TreeVisitor: pass
+==== Results ====
+Passed 8/8 test cases
 ```
