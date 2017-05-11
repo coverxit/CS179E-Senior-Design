@@ -37,8 +37,8 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
         n.f1.accept(this, p);
 
         if (helperFunctionCalled) {
-            t.outputHelperFunction();
             t.getOutput().writeLine();
+            t.outputHelperFunction();
         }
         return null;
     }
@@ -79,7 +79,6 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
 
         t.getLabelManager().endMethod();
         t.getOutput().decreaseIndent();
-        t.getOutput().writeLine();
         return null;
     }
 
@@ -141,6 +140,7 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
         Scope ns = b.getScope();
         Translator t = p.getTranslator();
 
+        t.getOutput().writeLine();
         t.outputMethodSignature(b);
         t.getOutput().increaseIndent();
         t.getLabelManager().beginMethod();
@@ -152,7 +152,6 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
 
         t.getLabelManager().endMethod();
         t.getOutput().decreaseIndent();
-        t.getOutput().writeLine();
         return null;
     }
 
