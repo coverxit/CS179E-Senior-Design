@@ -80,6 +80,13 @@ public class Helper {
         return id.f0.tokenImage;
     }
 
+    public static String getParameters(FormalParameterList fpl)
+    {
+	String params = "";
+	params = params + identifierName(fpl.f0.f1);
+	return params;
+    }
+
     public static boolean parameterDistinct(FormalParameterList fpl) {
         // Check if FormalParameterList() are pairwise distinct
         Set<String> declared = new HashSet<>();
