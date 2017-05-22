@@ -6,7 +6,7 @@ public class SubtypingRelation {
     private static Map<Symbol, Set<Symbol>> relation = new LinkedHashMap<>();
 
     public static void insert(Symbol base, Symbol child) {
-        relation.putIfAbsent(base, new HashSet<>());
+        relation.putIfAbsent(base, new LinkedHashSet<>());
         relation.get(base).add(child);
 
         // Subtyping is transitive

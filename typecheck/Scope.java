@@ -5,7 +5,7 @@ import java.util.*;
 import syntaxtree.*;
 
 public class Scope {
-    private Map<Symbol, Binder> table = new HashMap<>();
+    private Map<Symbol, Binder> table = new LinkedHashMap<>();
     private Scope parent;
     private Node bind;
 
@@ -42,6 +42,10 @@ public class Scope {
             return b;
         else
             return null;
+    }
+
+    public Iterator<Binder> symbolIterator() {
+        return table.values().iterator();
     }
 
     public Scope getParent() {

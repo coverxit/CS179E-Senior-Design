@@ -4,7 +4,7 @@ import java.util.*;
 
 import syntaxtree.*;
 
-public class Helper {
+public class TypeCheckHelper {
     public static String className(Node c) {
         if (c instanceof MainClass) {
             /*
@@ -28,7 +28,7 @@ public class Helper {
              * f16 -> "}"
              * f17 -> "}"
              */
-            return Helper.identifierName(((MainClass) c).f1);
+            return TypeCheckHelper.identifierName(((MainClass) c).f1);
         } else if (c instanceof ClassDeclaration) {
             /*
              * Grammar production:
@@ -39,7 +39,7 @@ public class Helper {
              * f4 -> ( MethodDeclaration() )*
              * f5 -> "}"
              */
-            return Helper.identifierName(((ClassDeclaration) c).f1);
+            return TypeCheckHelper.identifierName(((ClassDeclaration) c).f1);
         } else { // c instanceof ClassExtendsDeclaration
             /*
              * Grammar production:
@@ -52,7 +52,7 @@ public class Helper {
              * f6 -> ( MethodDeclaration() )*
              * f7 -> "}"
              */
-            return Helper.identifierName(((ClassExtendsDeclaration) c).f1);
+            return TypeCheckHelper.identifierName(((ClassExtendsDeclaration) c).f1);
         }
     }
 
@@ -73,7 +73,7 @@ public class Helper {
          * f11 -> ";"
          * f12 -> "}"
          */
-        return Helper.identifierName(((MethodDeclaration) m).f2);
+        return TypeCheckHelper.identifierName(((MethodDeclaration) m).f2);
     }
 
     public static String identifierName(Identifier id) {
@@ -104,14 +104,14 @@ public class Helper {
          * f0 -> Type()
          * f1 -> Identifier()
          */
-        declared.add(Helper.identifierName(first.f1));
+        declared.add(TypeCheckHelper.identifierName(first.f1));
         for (Enumeration<Node> e = rest.elements(); e.hasMoreElements(); ) {
             /*
              * Grammar production:
              * f0 -> ","
              * f1 -> FormalParameter()
              */
-            String id = Helper.identifierName(((FormalParameterRest) e.nextElement()).f1.f1);
+            String id = TypeCheckHelper.identifierName(((FormalParameterRest) e.nextElement()).f1.f1);
 
             if (declared.contains(id))
                 return false;
@@ -132,7 +132,7 @@ public class Helper {
              * f1 -> Identifier()
              * f2 -> ";"
              */
-            String id = Helper.identifierName(((VarDeclaration) e.nextElement()).f1);
+            String id = TypeCheckHelper.identifierName(((VarDeclaration) e.nextElement()).f1);
 
             if (declared.contains(id))
                 return false;
@@ -164,7 +164,7 @@ public class Helper {
              * f11 -> ";"
              * f12 -> "}"
              */
-            String id = Helper.methodName(e.nextElement());
+            String id = TypeCheckHelper.methodName(e.nextElement());
 
             if (declared.contains(id))
                 return false;
@@ -205,14 +205,14 @@ public class Helper {
                  * f16 -> "}"
                  * f17 -> "}"
                  */
-                id = Helper.className(n);
+                id = TypeCheckHelper.className(n);
             } else { // n instanceof TypeDeclaration
                 /*
                  * Grammar production:
                  * f0 -> ClassDeclaration()
                  *       | ClassExtendsDeclaration()
                  */
-                id = Helper.className(((TypeDeclaration) n).f0.choice);
+                id = TypeCheckHelper.className(((TypeDeclaration) n).f0.choice);
             }
 
             if (declared.contains(id))
@@ -258,19 +258,19 @@ public class Helper {
              * f0 -> Type()
              * f1 -> Identifier()
              */
-            params.add(Helper.makeExpressionType(first.f0).getType());
+            params.add(TypeCheckHelper.makeExpressionType(first.f0).getType());
             for (Enumeration<Node> e = rest.elements(); e.hasMoreElements(); ) {
                 /*
                  * Grammar production:
                  * f0 -> ","
                  * f1 -> FormalParameter()
                  */
-                String type = Helper.makeExpressionType(((FormalParameterRest) e.nextElement()).f1.f0).getType();
+                String type = TypeCheckHelper.makeExpressionType(((FormalParameterRest) e.nextElement()).f1.f0).getType();
                 params.add(type);
             }
         }
 
-        return new MethodType(params, Helper.makeExpressionType(m.f1));
+        return new MethodType(params, TypeCheckHelper.makeExpressionType(m.f1));
     }
 
     public static Type extractTypeFromParamOrVar(Node n) {
@@ -308,20 +308,20 @@ public class Helper {
          */
         NodeChoice c = t.f0;
         if (c.which == 0)
-            retType = Helper.INT_ARRAY;
+            retType = TypeCheckHelper.INT_ARRAY;
         else if (c.which == 1)
-            retType = Helper.BOOLEAN;
+            retType = TypeCheckHelper.BOOLEAN;
         else if (c.which == 2)
-            retType = Helper.INT;
+            retType = TypeCheckHelper.INT;
         else // c.which == 3
-            retType = Helper.identifierName((Identifier) c.choice);
+            retType = TypeCheckHelper.identifierName((Identifier) c.choice);
 
         return new ExpressionType(c.choice, retType);
     }
 
     public static boolean isBasicType(String type) {
-        return type.equals(Helper.INT_ARRAY)
-                || type.equals(Helper.BOOLEAN)
-                || type.equals(Helper.INT);
+        return type.equals(TypeCheckHelper.INT_ARRAY)
+                || type.equals(TypeCheckHelper.BOOLEAN)
+                || type.equals(TypeCheckHelper.INT);
     }
 }

@@ -23,7 +23,7 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
         }
 
         // distinct(classname(mc),classname(d1),...,classname(dn))
-        if (Helper.classDistinct(cl)) {
+        if (TypeCheckHelper.classDistinct(cl)) {
             n.f0.accept(this, s);
             n.f1.accept(this, s);
         } else {
@@ -53,7 +53,7 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
      */
     @Override
     public void visit(MainClass n, Scope s) {
-        Symbol id = Symbol.fromString(Helper.className(n));
+        Symbol id = Symbol.fromString(TypeCheckHelper.className(n));
         SubtypingRelation.insert(id, id); // Reflexive
 
         Scope ns = new Scope(s, n);
@@ -62,7 +62,7 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
         // Method `public static void main(String[] id)` is ignored for overloading check,
         // since we all know parser would complain if some other classes defined this method.
         // distinct(id1,...,idr)
-        if (Helper.variableDistinct(n.f14)) {
+        if (TypeCheckHelper.variableDistinct(n.f14)) {
             n.f14.accept(this, ns);
             // Skip `( Statement() )*`
         } else {
@@ -81,18 +81,18 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
      */
     @Override
     public void visit(ClassDeclaration n, Scope s) {
-        Symbol id = Symbol.fromString(Helper.className(n));
+        Symbol id = Symbol.fromString(TypeCheckHelper.className(n));
         SubtypingRelation.insert(id, id);
 
         Scope ns = new Scope(s, n);
         s.add(id, n, ns);
 
         // distinct(id1,...,idf)
-        if (Helper.variableDistinct(n.f3)) {
+        if (TypeCheckHelper.variableDistinct(n.f3)) {
             n.f3.accept(this, ns);
 
             // distinct(methodname(m1),...methodname(mk))
-            if (Helper.methodDistinct(n.f4))
+            if (TypeCheckHelper.methodDistinct(n.f4))
                 n.f4.accept(this, ns);
             else
                 ErrorMessage.complain("ClassDeclaration: Overloading is not allowed. " +
@@ -115,10 +115,10 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
      */
     @Override
     public void visit(ClassExtendsDeclaration n, Scope s) {
-        Symbol id = Symbol.fromString(Helper.className(n));
+        Symbol id = Symbol.fromString(TypeCheckHelper.className(n));
         SubtypingRelation.insert(id, id);
 
-        Symbol base = Symbol.fromString(Helper.identifierName(n.f3));
+        Symbol base = Symbol.fromString(TypeCheckHelper.identifierName(n.f3));
         Binder b = s.lookup(base);
         if (b != null) {
             SubtypingRelation.insert(base, id);
@@ -127,11 +127,11 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
             s.add(id, n, ns);
 
             // distinct(id1,...,idf)
-            if (Helper.variableDistinct(n.f5)) {
+            if (TypeCheckHelper.variableDistinct(n.f5)) {
                 n.f5.accept(this, ns);
 
                 // distinct(methodname(m1),...methodname(mk))
-                if (Helper.methodDistinct(n.f6))
+                if (TypeCheckHelper.methodDistinct(n.f6))
                     n.f6.accept(this, ns);
                 else
                     ErrorMessage.complain("ClassExtendsDeclaration: Overloading is not allowed. " +
@@ -163,14 +163,14 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
      */
     @Override
     public void visit(MethodDeclaration n, Scope s) {
-        Symbol id = Symbol.fromString(Helper.methodName(n));
+        Symbol id = Symbol.fromString(TypeCheckHelper.methodName(n));
         Binder b = s.lookup(id);
 
         // Overloading check
         // noOverloading(id,idp,methodname(mi))
         if (b != null) {
-            MethodType base = Helper.methodType((MethodDeclaration) b.getType());
-            MethodType inherit = Helper.methodType(n);
+            MethodType base = TypeCheckHelper.methodType((MethodDeclaration) b.getType());
+            MethodType inherit = TypeCheckHelper.methodType(n);
 
             // Guarantee only overriding
             if (!base.equals(inherit)) {
@@ -184,7 +184,7 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
 
         if (n.f4.present()) {
             // distinct(idf1,...,idfn)
-            if (Helper.parameterDistinct((FormalParameterList) n.f4.node)) {
+            if (TypeCheckHelper.parameterDistinct((FormalParameterList) n.f4.node)) {
                 n.f4.accept(this, ns);
             } else {
                 ErrorMessage.complain("MethodDeclaration: Parameter identifiers are not pairwise distinct. " +
@@ -193,7 +193,7 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
         }
 
         // distinct(id1,...,idr)
-        if (Helper.variableDistinct(n.f7)) {
+        if (TypeCheckHelper.variableDistinct(n.f7)) {
             n.f7.accept(this, ns);
         } else {
             ErrorMessage.complain("MethodDeclaration: Variable identifiers are not pairwise distinct. " +
@@ -207,7 +207,7 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
      */
     @Override
     public void visit(FormalParameter n, Scope s) {
-        Symbol id = Symbol.fromString(Helper.identifierName(n.f1));
+        Symbol id = Symbol.fromString(TypeCheckHelper.identifierName(n.f1));
 
         // Type check for VarDeclaration is in second phase.
         s.add(id, n, s);
@@ -220,7 +220,7 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
      */
     @Override
     public void visit(VarDeclaration n, Scope s) {
-        Symbol id = Symbol.fromString(Helper.identifierName(n.f1));
+        Symbol id = Symbol.fromString(TypeCheckHelper.identifierName(n.f1));
 
         // Type check for VarDeclaration is in second phase.
         s.add(id, n, s);
