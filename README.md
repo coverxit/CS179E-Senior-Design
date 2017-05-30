@@ -213,3 +213,44 @@ To compile and run manually:
 javac -cp "./;./parser/varpor-parser.jar" codegen/Output.java V2VM.java 
 java -cp "./;./parser/vapor-parser.jar" V2VM < vapor-file > vaporM-file
 ```
+
+To generate the `hw3.tgz` required by `Phase3Tester`:
+
+```bash
+mkdir -p hw3/codegen
+cp codegen/Output.java hw3/codegen/
+cp -r regalloc hw3/
+tar zcf hw3.tgz hw3/
+rm -rf hw3
+```
+
+### Test Result
+
+```
+===============
+Deleting old output directory "./Output"...
+Extracting files from "../hw3.tgz"...
+Compiling program with 'javac'...
+==== Running Tests ====
+1-Basic: pass
+2-Loop: pass
+BinaryTree.opt: pass
+BinaryTree: pass
+BubbleSort.opt: pass
+BubbleSort: pass
+Factorial.opt: pass
+Factorial: pass
+LinearSearch.opt: pass
+LinearSearch: pass
+LinkedList.opt: pass
+LinkedList: pass
+MoreThan4.opt: pass
+MoreThan4: pass
+QuickSort.opt: pass
+QuickSort: pass
+TreeVisitor.opt: pass
+TreeVisitor: pass
+==== Results ====
+Passed 18/18 test cases
+- Submission Size = 33 kB
+```
