@@ -7,6 +7,7 @@ public class Output {
 
     private String indent = "";
     private PrintStream stream;
+    private boolean newLine = true;
 
     public Output(PrintStream s) {
         stream = s;
@@ -25,11 +26,13 @@ public class Output {
     }
 
     public void write(String s) {
-        stream.print(indent + s);
+        stream.print((newLine ? indent : "") + s);
+        newLine = false;
     }
 
     public void writeLine(String s) {
-        stream.println(indent + s);
+        stream.println((newLine ? indent : "") + s);
+        newLine = true;
     }
 
     public void writeLine() {
