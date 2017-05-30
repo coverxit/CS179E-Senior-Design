@@ -47,7 +47,6 @@ public class Allocator {
         }
 
         return new AllocationMap(new LinkedHashMap<>(register),
-                (int) register.values().stream().filter(Register::isCalleeSaved).count(),
                 stack.toArray(new String[stack.size()]));
     }
 

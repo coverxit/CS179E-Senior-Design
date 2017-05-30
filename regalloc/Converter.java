@@ -67,9 +67,9 @@ public class Converter {
         List<Register> callee = map.usedCalleeRegister();
 
         // Map instrIndex to a label
-        Map<Integer, String> labels = new HashMap<>();
+        Map<Integer, Set<String>> labels = new HashMap<>();
         for (VCodeLabel l : func.labels)
-            labels.put(l.instrIndex, l.ident);
+            labels.computeIfAbsent(l.instrIndex, k -> new LinkedHashSet<>()).add(l.ident);
 
         int inStack = Math.max(func.params.length - 4, 0);
         int outStack = 0; // calculated later
@@ -87,8 +87,8 @@ public class Converter {
                 // For saving $t before function call.
                 // $t are saved on the high address of local stack.
                 int saves = (int) liveOut.stream().map(map::lookupRegister).filter(o -> o != null
-                        && o.isCallerSaved()).count();
-                localStack = Math.max(map.stackSize(), map.stackSize() + saves);
+                        && o.isCallerSaved()).distinct().count();
+                localStack = Math.max(localStack, map.stackSize() + saves);
             }
         }
 
@@ -120,7 +120,7 @@ public class Converter {
 
             if (labels.containsKey(i)) {
                 out.decreaseIndent();
-                out.writeLine(labels.get(i) + ":");
+                labels.get(i).forEach(l -> out.writeLine(l + ":"));
                 out.increaseIndent();
             }
 
@@ -144,7 +144,8 @@ public class Converter {
                 @Override
                 public void visit(VCall vCall) {
                     List<Register> save = liveOut.stream().map(map::lookupRegister).filter(o -> o != null
-                            && o.isCallerSaved()).collect(Collectors.toList());
+                            && o.isCallerSaved()).distinct().collect(Collectors.toList());
+                    save.sort(Comparator.comparing(Register::toString));
 
                     // Save all $t registers
                     for (int i = 0; i < save.size(); i++) {
@@ -177,9 +178,13 @@ public class Converter {
                         }
                     }
 
-                    Register addr = loadVariable(map, vCall.addr.toString());
-                    out.writeLine("call " + addr.toString());
-                    releaseLocalRegister(addr);
+                    if (vCall.addr instanceof VAddr.Label) {
+                        out.writeLine("call " + vCall.addr.toString());
+                    } else {
+                        Register addr = loadVariable(map, vCall.addr.toString());
+                        out.writeLine("call " + addr.toString());
+                        releaseLocalRegister(addr);
+                    }
 
                     Register dst = loadVariable(map, vCall.dest.toString());
                     outputAssignment(dst.toString(), Register.v0.toString());

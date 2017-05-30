@@ -8,14 +8,14 @@ public class AllocationMap {
     private final List<String> stack;
     private final int stackReserved;
 
-    public AllocationMap(Map<String, Register> r, int sr, String[] s) {
+    public AllocationMap(Map<String, Register> r, String[] s) {
         register = r;
-        stackReserved = sr;
         stack = Arrays.asList(s);
+        stackReserved = usedCalleeRegister().size();
     }
 
     public List<Register> usedCalleeRegister() {
-        return register.values().stream().filter(Register::isCalleeSaved).collect(Collectors.toList());
+        return register.values().stream().filter(Register::isCalleeSaved).distinct().collect(Collectors.toList());
     }
 
     public Register lookupRegister(String s) {
@@ -28,6 +28,6 @@ public class AllocationMap {
     }
 
     public int stackSize() {
-        return stack.size();
+        return stack.size() + stackReserved;
     }
 }
