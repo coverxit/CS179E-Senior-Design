@@ -39,14 +39,15 @@ public class Converter {
         out.writeLine("local " + Integer.toString(localStack) + "]");
     }
 
-    public Register loadVariable(AllocationMap map, String var) {
+    public Register loadVariable(AllocationMap map, String var, boolean dst) {
         Register reg = map.lookupRegister(var);
         if (reg != null) { // var in register
             return reg;
         } else { // var on `local` stack
             int offset = map.lookupStack(var);
             Register load = localPool.acquire();
-            outputAssignment(load.toString(), RegAllocHelper.local(offset));
+            if (!dst) // for dest's, they only want a register.
+                outputAssignment(load.toString(), RegAllocHelper.local(offset));
             return load;
         }
     }
@@ -128,10 +129,10 @@ public class Converter {
             func.body[i].accept(new VInstr.Visitor<RuntimeException>() {
                 @Override
                 public void visit(VAssign vAssign) {
-                    Register dst = loadVariable(map, vAssign.dest.toString());
+                    Register dst = loadVariable(map, vAssign.dest.toString(), true);
 
                     if (vAssign.source instanceof VVarRef) {
-                        Register src = loadVariable(map, vAssign.source.toString());
+                        Register src = loadVariable(map, vAssign.source.toString(), false);
                         outputAssignment(dst.toString(), src.toString());
                         releaseLocalRegister(src);
                     } else {
@@ -166,7 +167,7 @@ public class Converter {
                                     outputAssignment(argregs[i].toString(), RegAllocHelper.local(offset));
                                 }
                             } else { // into `out` stack
-                                Register reg = loadVariable(map, var);
+                                Register reg = loadVariable(map, var, false);
                                 outputAssignment(RegAllocHelper.out(i - 4), reg.toString());
                                 releaseLocalRegister(reg);
                             }
@@ -182,12 +183,12 @@ public class Converter {
                     if (vCall.addr instanceof VAddr.Label) {
                         out.writeLine("call " + vCall.addr.toString());
                     } else {
-                        Register addr = loadVariable(map, vCall.addr.toString());
+                        Register addr = loadVariable(map, vCall.addr.toString(), false);
                         out.writeLine("call " + addr.toString());
                         releaseLocalRegister(addr);
                     }
 
-                    Register dst = loadVariable(map, vCall.dest.toString());
+                    Register dst = loadVariable(map, vCall.dest.toString(), true);
                     outputAssignment(dst.toString(), Register.v0.toString());
                     writeVariable(dst, map, vCall.dest.toString());
                     releaseLocalRegister(dst);
@@ -204,7 +205,7 @@ public class Converter {
                     List<Register> srcregs = new ArrayList<>();
                     for (VOperand arg : vBuiltIn.args) {
                         if (arg instanceof VVarRef) {
-                            Register src = loadVariable(map, arg.toString());
+                            Register src = loadVariable(map, arg.toString(), false);
                             srcregs.add(src);
 
                             rhs.append(src.toString());
@@ -220,7 +221,7 @@ public class Converter {
                     if (vBuiltIn.dest == null) { // no return value
                         out.writeLine(rhs.toString());
                     } else {
-                        Register dst = loadVariable(map, vBuiltIn.dest.toString());
+                        Register dst = loadVariable(map, vBuiltIn.dest.toString(), true);
                         outputAssignment(dst.toString(), rhs.toString());
 
                         writeVariable(dst, map, vBuiltIn.dest.toString());
@@ -234,25 +235,25 @@ public class Converter {
                 @Override
                 public void visit(VMemWrite vMemWrite) {
                     VMemRef.Global ref = (VMemRef.Global) vMemWrite.dest;
-                    Register dst = loadVariable(map, ref.base.toString());
+                    Register base = loadVariable(map, ref.base.toString(), false);
 
                     if (vMemWrite.source instanceof VVarRef) {
-                        Register src = loadVariable(map, vMemWrite.source.toString());
-                        outputAssignment(RegAllocHelper.memoryReference(dst, ref.byteOffset), src.toString());
+                        Register src = loadVariable(map, vMemWrite.source.toString(), false);
+                        outputAssignment(RegAllocHelper.memoryReference(base, ref.byteOffset), src.toString());
                         releaseLocalRegister(src);
                     } else {
-                        outputAssignment(RegAllocHelper.memoryReference(dst, ref.byteOffset), vMemWrite.source.toString());
+                        outputAssignment(RegAllocHelper.memoryReference(base, ref.byteOffset), vMemWrite.source.toString());
                     }
 
-                    releaseLocalRegister(dst);
+                    releaseLocalRegister(base);
                 }
 
                 @Override
                 public void visit(VMemRead vMemRead) {
-                    Register dst = loadVariable(map, vMemRead.dest.toString());
+                    Register dst = loadVariable(map, vMemRead.dest.toString(), true);
 
                     VMemRef.Global ref = (VMemRef.Global) vMemRead.source;
-                    Register src = loadVariable(map, ref.base.toString());
+                    Register src = loadVariable(map, ref.base.toString(), false);
                     outputAssignment(dst.toString(), RegAllocHelper.memoryReference(src, ref.byteOffset));
                     releaseLocalRegister(src);
 
@@ -264,7 +265,7 @@ public class Converter {
                 public void visit(VBranch vBranch) {
                     String cond = vBranch.value.toString();
                     if (vBranch.value instanceof VVarRef) {
-                        Register src = loadVariable(map, vBranch.value.toString());
+                        Register src = loadVariable(map, vBranch.value.toString(), false);
                         cond = src.toString();
                         releaseLocalRegister(src);
                     }
@@ -283,7 +284,7 @@ public class Converter {
                 public void visit(VReturn vReturn) {
                     if (vReturn.value != null) {
                         if (vReturn.value instanceof VVarRef) {
-                            Register src = loadVariable(map, vReturn.value.toString());
+                            Register src = loadVariable(map, vReturn.value.toString(), false);
                             outputAssignment(Register.v0.toString(), src.toString());
                             releaseLocalRegister(src);
                         } else {

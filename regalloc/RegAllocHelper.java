@@ -1,6 +1,5 @@
 package regalloc;
 
-import codegen.Output;
 import cs132.vapor.ast.*;
 
 import java.util.*;
