@@ -26,6 +26,9 @@ public class RegAllocHelper {
                 @Override
                 public void visit(VCall vCall) {
                     def.add(vCall.dest.toString());
+                    if (vCall.addr instanceof VAddr.Var) {
+                        use.add(vCall.addr.toString());
+                    }
                     for (VOperand arg : vCall.args) {
                         if (arg instanceof VVarRef) {
                             use.add(arg.toString());

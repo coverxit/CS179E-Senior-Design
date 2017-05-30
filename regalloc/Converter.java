@@ -118,6 +118,7 @@ public class Converter {
             final Set<String> liveOut = liveness.getOut().get(i);
             liveOut.removeAll(liveness.getDef().get(i));
 
+            // Output labels
             if (labels.containsKey(i)) {
                 out.decreaseIndent();
                 labels.get(i).forEach(l -> out.writeLine(l + ":"));
