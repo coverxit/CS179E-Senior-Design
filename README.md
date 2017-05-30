@@ -210,6 +210,6 @@ Passed 8/8 test cases
 To compile and run manually:
 
 ```bash
-javac -cp "./;./parser/varpor-parser.jar" V2VM.java 
+javac -cp "./;./parser/varpor-parser.jar" codegen/Output.java V2VM.java 
 java -cp "./;./parser/vapor-parser.jar" V2VM < vapor-file > vaporM-file
 ```
