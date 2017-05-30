@@ -220,6 +220,7 @@ To generate the `hw3.tgz` required by `Phase3Tester`:
 mkdir -p hw3/codegen
 cp codegen/Output.java hw3/codegen/
 cp -r regalloc hw3/
+cp V2VM.java hw3/
 tar zcf hw3.tgz hw3/
 rm -rf hw3
 ```
