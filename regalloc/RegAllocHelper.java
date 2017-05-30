@@ -51,7 +51,7 @@ public class RegAllocHelper {
                 @Override
                 public void visit(VMemWrite vMemWrite) {
                     VMemRef.Global ref = (VMemRef.Global) vMemWrite.dest;
-                    def.add(ref.base.toString());
+                    use.add(ref.base.toString()); // not def but use
                     if (vMemWrite.source instanceof VVarRef) {
                         use.add(vMemWrite.source.toString());
                     }
@@ -76,7 +76,9 @@ public class RegAllocHelper {
 
                 @Override
                 public void visit(VGoto vGoto) {
-                    // vGoto produces no def and use.
+                    if (vGoto.target instanceof VAddr.Var) {
+                        use.add(vGoto.target.toString());
+                    }
                 }
 
                 @Override
