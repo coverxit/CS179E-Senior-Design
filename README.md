@@ -210,8 +210,8 @@ Passed 8/8 test cases
 To compile and run manually:
 
 ```bash
-javac -cp "./;./parser/varpor-parser.jar" codegen/Output.java V2VM.java 
-java -cp "./;./parser/vapor-parser.jar" V2VM < vapor-file > vaporM-file
+javac -cp "./;./parser/varpor-parser.jar;./regalloc/" codegen/Output.java regalloc/V2VM.java 
+java -cp "./;./parser/vapor-parser.jar;./regalloc/" V2VM < vapor-file > vaporM-file
 ```
 
 To generate the `hw3.tgz` required by `Phase3Tester`:
@@ -220,7 +220,7 @@ To generate the `hw3.tgz` required by `Phase3Tester`:
 mkdir -p hw3/codegen
 cp codegen/Output.java hw3/codegen/
 cp -r regalloc hw3/
-cp V2VM.java hw3/
+mv hw3/regalloc/V2VM.java hw3/
 tar zcf hw3.tgz hw3/
 rm -rf hw3
 ```
@@ -345,4 +345,15 @@ public class RegisterPool {
     }
     /* ... */
 }
+```
+
+## Phase 4: Activation Records and Instruction Selection
+
+### Instructions
+
+To compile and run manually:
+
+```bash
+javac -cp "./;./parser/varpor-parser.jar" codegen/Output.java VM2M.java 
+java -cp "./;./parser/vapor-parser.jar" VM2M < vaporM-file > asm-file
 ```
