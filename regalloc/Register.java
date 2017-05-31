@@ -21,6 +21,7 @@ public class Register {
     public static final Register t6 = new Register("t6");
     public static final Register t7 = new Register("t7");
     public static final Register t8 = new Register("t8");
+    public static final Register t9 = new Register("t9");
 
     // Argument passing
     public static final Register a0 = new Register("a0");
@@ -31,6 +32,11 @@ public class Register {
     // Return value/Temporary loading
     public static final Register v0 = new Register("v0");
     public static final Register v1 = new Register("v1");
+
+    // Pointer registers
+    public static final Register sp = new Register("sp");
+    public static final Register fp = new Register("fp");
+    public static final Register ra = new Register("ra");
 
     private final String reg;
 
