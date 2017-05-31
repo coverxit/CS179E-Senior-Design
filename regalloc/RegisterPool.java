@@ -28,7 +28,7 @@ public class RegisterPool {
     public static RegisterPool CreateLocalPool() {
         Register[] regs = {
                 Register.v0, Register.v1,
-                //Register.a0, Register.a1, Register.a2, Register.a3
+                Register.a0, Register.a1, Register.a2, Register.a3
         };
 
         return new RegisterPool(regs);
