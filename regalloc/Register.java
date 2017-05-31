@@ -49,7 +49,7 @@ public class Register {
     }
 
     public boolean isCalleeSaved() {
-        return reg.startsWith("s");
+        return reg.startsWith("s") && !reg.equals("sp");
     }
 
     public boolean isArgumentPassing() {
