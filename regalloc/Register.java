@@ -37,6 +37,7 @@ public class Register {
     public static final Register sp = new Register("sp");
     public static final Register fp = new Register("fp");
     public static final Register ra = new Register("ra");
+    public static final Register zero = new Register("zero");
 
     private final String reg;
 
@@ -58,6 +59,10 @@ public class Register {
 
     public boolean isReturnOrLoading() {
         return reg.startsWith("v");
+    }
+
+    public static Register fromString(String reg) {
+        return new Register(reg.substring(1, reg.length()));
     }
 
     @Override

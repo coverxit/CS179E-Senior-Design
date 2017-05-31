@@ -25,13 +25,19 @@ public class VM2M {
 
         return VaporParser.run(new InputStreamReader(in), 1, 1, Arrays.asList(ops),
                 // allowLocals, registers, allowStack
-                true, registers, false);
+                false, registers, true);
     }
 
     public static void main(String[] args) throws ProblemException, IOException {
         Assembler asm = new Assembler();
+        new AsmGenHelper(asm.getOutput());
         VaporProgram program = parseVaporM(System.in);
 
         asm.outputDataSegment(program.dataSegments);
+        asm.outputTextSegment();
+        for (VFunction func : program.functions)
+            asm.outputFunction(func);
+        asm.outputBuiltInFunctions();
+        asm.outputConstSegment();
     }
 }
