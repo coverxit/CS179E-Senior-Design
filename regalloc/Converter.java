@@ -101,15 +101,24 @@ public class Converter {
             outputAssignment(RegAllocHelper.local(i), callee.get(i).toString());
         }
 
-        // Load parameters into register
+        // Load parameters into register or `local` statck
         Register[] argregs = { Register.a0, Register.a1, Register.a2, Register.a3 };
         for (int i = 0; i < func.params.length; i++) {
             Register dst = map.lookupRegister(func.params[i].ident);
-            if (dst != null) { // some parameters may never be used
+            if (dst != null) {
                 if (i < 4) { // Params passed by registers
                     outputAssignment(dst.toString(), argregs[i].toString());
                 } else { // Params passed by `in` stack
                     outputAssignment(dst.toString(), RegAllocHelper.in(i - 4));
+                }
+            } else {
+                int offset = map.lookupStack(func.params[i].ident);
+                if (offset != -1) { // some parameters may never be used
+                    // Move the remaining parameters into `local` stack
+                    Register load = localPool.acquire();
+                    outputAssignment(load.toString(), RegAllocHelper.in(i));
+                    outputAssignment(RegAllocHelper.local(offset), load.toString());
+                    localPool.release(load);
                 }
             }
         }

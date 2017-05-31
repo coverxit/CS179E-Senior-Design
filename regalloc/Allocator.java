@@ -27,8 +27,12 @@ public class Allocator {
             String arg = params[i].ident;
             // If parameter is used during the function
             if (intervals.stream().map(Interval::getVar).anyMatch(o -> o.equals(arg))) {
-                register.put(arg, pool.acquire());
-                unusedParams.add(arg);
+                if (pool.hasFree()) {
+                    // For those args that are not able to be put into registers,
+                    // we move them into `local` stack.
+                    register.put(arg, pool.acquire());
+                    unusedParams.add(arg);
+                }
             }
         }
 
