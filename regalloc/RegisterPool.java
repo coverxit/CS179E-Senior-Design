@@ -16,6 +16,7 @@ public class RegisterPool {
                 // Caller-saved
                 Register.t0, Register.t1, Register.t2, Register.t3,
                 Register.t4, Register.t5, Register.t6, Register.t7,
+                Register.t8,
                 // Callee-saved
                 Register.s0, Register.s1, Register.s2, Register.s3,
                 Register.s4, Register.s5, Register.s6, Register.s7

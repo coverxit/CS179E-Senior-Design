@@ -20,6 +20,7 @@ public class Register {
     public static final Register t5 = new Register("t5");
     public static final Register t6 = new Register("t6");
     public static final Register t7 = new Register("t7");
+    public static final Register t8 = new Register("t8");
 
     // Argument passing
     public static final Register a0 = new Register("a0");
