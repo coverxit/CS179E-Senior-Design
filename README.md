@@ -227,6 +227,11 @@ rm -rf hw3
 
 ### Test Result
 
+Running `Phase3Tester` with all registers **(23)**:
+	
+- For global allocation: `$t0` ~ `$t7` and `$s0` ~ `$s7`.
+- For local allocation (temporarily loading variables from stack): `$v0`, `$v1`, `$a0` ~ `$a3`.
+
 ```
 ===============
 Deleting old output directory "./Output"...
@@ -254,4 +259,90 @@ TreeVisitor: pass
 ==== Results ====
 Passed 18/18 test cases
 - Submission Size = 33 kB
+```
+
+Corresponding factory methods in `regalloc.RegisterPool`:
+
+```java
+public class RegisterPool {
+	/* ... */
+	public static RegisterPool CreateGlobalPool() {
+        Register[] regs = {
+                Register.t0, Register.t1, Register.t2, Register.t3,
+                Register.t4, Register.t5, Register.t6, Register.t7,
+                Register.s0, Register.s1, Register.s2, Register.s3,
+                Register.s4, Register.s5, Register.s6, Register.s7
+        };
+
+        return new RegisterPool(regs);
+    }
+
+    public static RegisterPool CreateLocalPool() {
+        Register[] regs = {
+                Register.v0, Register.v1,
+                Register.a0, Register.a1, Register.a2, Register.a3
+        };
+
+        return new RegisterPool(regs);
+    }
+	/* ... */
+}
+```
+
+In order to test whether we generated correct VaporM code when some variables are spilled onto the stack, we also tested running `Phase3Tester` with limited  registers **(6)**:
+
+- For global allocation: `$t0` ~ `$t3`.
+- For local allocation (temporarily loading variables from stack): `$v0`, `$v1`.
+
+```
+===============
+Deleting old output directory "./Output"...
+Extracting files from "../hw3.tgz"...
+Compiling program with 'javac'...
+==== Running Tests ====
+1-Basic: pass
+2-Loop: pass
+BinaryTree.opt: pass
+BinaryTree: pass
+BubbleSort.opt: pass
+BubbleSort: pass
+Factorial.opt: pass
+Factorial: pass
+LinearSearch.opt: pass
+LinearSearch: pass
+LinkedList.opt: pass
+LinkedList: pass
+MoreThan4.opt: pass
+MoreThan4: pass
+QuickSort.opt: pass
+QuickSort: pass
+TreeVisitor.opt: pass
+TreeVisitor: pass
+==== Results ====
+Passed 18/18 test cases
+- Submission Size = 34 kB
+```
+
+Corresponding factory methods in `regalloc.RegisterPool`:
+
+```java
+public class RegisterPool {
+	/* ... */
+	public static RegisterPool CreateGlobalPool() {
+        Register[] regs = {
+                Register.t0, Register.t1, Register.t2, Register.t3
+        };
+
+        return new RegisterPool(regs);
+    }
+
+    public static RegisterPool CreateLocalPool() {
+        Register[] regs = {
+                Register.v0, Register.v1
+        };
+
+        return new RegisterPool(regs);
+    }
+	/* ... */
+}
 ```
