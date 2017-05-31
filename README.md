@@ -229,7 +229,7 @@ rm -rf hw3
 
 Running `Phase3Tester` with all registers **(23)**:
 	
-- For global allocation: `$t0` ~ `$t7` and `$s0` ~ `$s7`.
+- For global allocation: `$t0` ~ `$t8` and `$s0` ~ `$s7`.
 - For local allocation (temporarily loading variables from stack): `$v0`, `$v1`, `$a0` ~ `$a3`.
 
 ```
@@ -270,6 +270,7 @@ public class RegisterPool {
         Register[] regs = {
                 Register.t0, Register.t1, Register.t2, Register.t3,
                 Register.t4, Register.t5, Register.t6, Register.t7,
+                Register.t8,
                 Register.s0, Register.s1, Register.s2, Register.s3,
                 Register.s4, Register.s5, Register.s6, Register.s7
         };
