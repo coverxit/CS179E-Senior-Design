@@ -218,6 +218,9 @@ public class Converter {
                     rhs.deleteCharAt(rhs.length() - 1);
                     rhs.append(")");
 
+                    for (Register src : srcregs)
+                        releaseLocalRegister(src);
+
                     if (vBuiltIn.dest == null) { // no return value
                         out.writeLine(rhs.toString());
                     } else {
@@ -227,9 +230,6 @@ public class Converter {
                         writeVariable(dst, map, vBuiltIn.dest.toString());
                         releaseLocalRegister(dst);
                     }
-
-                    for (Register src : srcregs)
-                        releaseLocalRegister(src);
                 }
 
                 @Override
