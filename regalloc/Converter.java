@@ -198,7 +198,8 @@ public class Converter {
                     }
 
                     Register dst = loadVariable(map, vCall.dest.toString(), true);
-                    outputAssignment(dst.toString(), Register.v0.toString());
+                    if (dst != Register.v0)
+                        outputAssignment(dst.toString(), Register.v0.toString());
                     writeVariable(dst, map, vCall.dest.toString());
                     releaseLocalRegister(dst);
 
@@ -294,7 +295,8 @@ public class Converter {
                     if (vReturn.value != null) {
                         if (vReturn.value instanceof VVarRef) {
                             Register src = loadVariable(map, vReturn.value.toString(), false);
-                            outputAssignment(Register.v0.toString(), src.toString());
+                            if (src != Register.v0)
+                                outputAssignment(Register.v0.toString(), src.toString());
                             releaseLocalRegister(src);
                         } else {
                             outputAssignment(Register.v0.toString(), vReturn.value.toString());

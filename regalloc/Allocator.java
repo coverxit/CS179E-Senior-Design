@@ -28,7 +28,6 @@ public class Allocator {
             // If parameter is used during the function
             if (intervals.stream().map(Interval::getVar).anyMatch(o -> o.equals(arg))) {
                 if (pool.hasFree()) {
-                    // For those args that are not eng
                     register.put(arg, pool.acquire());
                     unusedParams.add(arg);
                 } else {
