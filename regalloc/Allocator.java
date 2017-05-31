@@ -28,12 +28,10 @@ public class Allocator {
             // If parameter is used during the function
             if (intervals.stream().map(Interval::getVar).anyMatch(o -> o.equals(arg))) {
                 if (pool.hasFree()) {
+                    // For those args that are not able to be put into registers,
+                    // we move them into `local` stack later (by spilling them).
                     register.put(arg, pool.acquire());
                     unusedParams.add(arg);
-                } else {
-                    // registers are not enough to hold all args.
-                    // Thus we move them into `local` stack.
-                    stack.add(arg);
                 }
             }
         }
