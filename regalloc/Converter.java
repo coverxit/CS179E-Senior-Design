@@ -116,7 +116,7 @@ public class Converter {
                 if (offset != -1) { // some parameters may never be used
                     // Move the remaining parameters into `local` stack
                     Register load = localPool.acquire();
-                    outputAssignment(load.toString(), RegAllocHelper.in(i));
+                    outputAssignment(load.toString(), RegAllocHelper.in(i - 4));
                     outputAssignment(RegAllocHelper.local(offset), load.toString());
                     localPool.release(load);
                 }
