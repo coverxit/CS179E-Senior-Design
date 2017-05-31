@@ -1,4 +1,4 @@
-import regalloc.*;
+import asmgen.*;
 
 import cs132.util.*;
 import cs132.vapor.parser.*;
@@ -9,7 +9,7 @@ import java.io.*;
 import java.util.*;
 
 public class VM2M {
-    public static VaporProgram parseVapor(InputStream in) throws ProblemException, IOException {
+    public static VaporProgram parseVaporM(InputStream in) throws ProblemException, IOException {
         Op[] ops = {
                 Op.Add, Op.Sub, Op.MulS, Op.Eq, Op.Lt, Op.LtS,
                 Op.PrintIntS, Op.HeapAllocZ, Op.Error,
@@ -29,6 +29,9 @@ public class VM2M {
     }
 
     public static void main(String[] args) throws ProblemException, IOException {
+        Assembler asm = new Assembler();
+        VaporProgram program = parseVaporM(System.in);
 
+        asm.outputDataSegment(program.dataSegments);
     }
 }
