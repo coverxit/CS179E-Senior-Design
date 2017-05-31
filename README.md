@@ -265,8 +265,8 @@ Corresponding factory methods in `regalloc.RegisterPool`:
 
 ```java
 public class RegisterPool {
-	/* ... */
-	public static RegisterPool CreateGlobalPool() {
+    /* ... */
+    public static RegisterPool CreateGlobalPool() {
         Register[] regs = {
                 Register.t0, Register.t1, Register.t2, Register.t3,
                 Register.t4, Register.t5, Register.t6, Register.t7,
@@ -285,7 +285,7 @@ public class RegisterPool {
 
         return new RegisterPool(regs);
     }
-	/* ... */
+    /* ... */
 }
 ```
 
@@ -327,8 +327,8 @@ Corresponding factory methods in `regalloc.RegisterPool`:
 
 ```java
 public class RegisterPool {
-	/* ... */
-	public static RegisterPool CreateGlobalPool() {
+    /* ... */
+    public static RegisterPool CreateGlobalPool() {
         Register[] regs = {
                 Register.t0, Register.t1, Register.t2, Register.t3
         };
@@ -343,6 +343,6 @@ public class RegisterPool {
 
         return new RegisterPool(regs);
     }
-	/* ... */
+    /* ... */
 }
 ```
