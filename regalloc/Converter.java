@@ -32,14 +32,14 @@ public class Converter {
         out.writeLine(lhs + " = " + rhs);
     }
 
-    public void outputFunctionSignature(String func, int inStack, int outStack, int localStack) {
+    private void outputFunctionSignature(String func, int inStack, int outStack, int localStack) {
         out.write("func " + func + " ");
         out.write("[in " + Integer.toString(inStack) + ", ");
         out.write("out " + Integer.toString(outStack) + ", ");
         out.writeLine("local " + Integer.toString(localStack) + "]");
     }
 
-    public Register loadVariable(AllocationMap map, String var, boolean dst) {
+    private Register loadVariable(AllocationMap map, String var, boolean dst) {
         Register reg = map.lookupRegister(var);
         if (reg != null) { // var in register
             return reg;
@@ -52,14 +52,14 @@ public class Converter {
         }
     }
 
-    public void writeVariable(Register reg, AllocationMap map, String var) {
+    private void writeVariable(Register reg, AllocationMap map, String var) {
         int offset = map.lookupStack(var);
         if (offset != -1) {
             outputAssignment(RegAllocHelper.local(offset), reg.toString());
         }
     }
 
-    public void releaseLocalRegister(Register reg) {
+    private void releaseLocalRegister(Register reg) {
         if (localPool.contains(reg))
             localPool.release(reg);
     }
