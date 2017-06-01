@@ -355,6 +355,48 @@ public class RegisterPool {
 To compile and run manually:
 
 ```bash
-javac -cp "./;./parser/varpor-parser.jar" codegen/Output.java VM2M.java 
+javac -cp "./;./parser/varpor-parser.jar" codegen/Output.java regalloc/Register.java VM2M.java 
 java -cp "./;./parser/vapor-parser.jar" VM2M < vaporM-file > asm-file
+```
+To generate the `hw4.tgz` required by `Phase4Tester`:
+
+```bash
+mkdir hw4
+mkdir hw4/codgen
+mkdir hw4/regalloc
+cp -r asmgen hw4/
+cp codgen/Output.java hw4/codegen/
+cp regalloc/Register.java hw4/regalloc/
+cp VM2M.java hw4/
+tar zcf hw4.tgz hw4/
+rm -rf hw1
+```
+
+### Test Result
+
+```
+===============
+Deleting old output directory "./Output"...
+Extracting files from "../hw4.tgz"...
+Compiling program with 'javac'...
+==== Running Tests ====
+BinaryTree.opt: pass
+BinaryTree: pass
+BubbleSort.opt: pass
+BubbleSort: pass
+Factorial.opt: pass
+Factorial: pass
+LinearSearch.opt: pass
+LinearSearch: pass
+LinkedList.opt: pass
+LinkedList: pass
+MoreThan4.opt: pass
+MoreThan4: pass
+QuickSort.opt: pass
+QuickSort: pass
+TreeVisitor.opt: pass
+TreeVisitor: pass
+==== Results ====
+Passed 16/16 test cases
+- Submission Size = 22 kB
 ```
