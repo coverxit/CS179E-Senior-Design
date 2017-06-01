@@ -355,8 +355,8 @@ public class RegisterPool {
 To compile and run manually:
 
 ```bash
-javac -cp "./;./parser/varpor-parser.jar" codegen/Output.java regalloc/Register.java VM2M.java 
-java -cp "./;./parser/vapor-parser.jar" VM2M < vaporM-file > asm-file
+javac -cp "./;./parser/varpor-parser.jar;./asmgen/" codegen/Output.java regalloc/Register.java asmgen/VM2M.java 
+java -cp "./;./parser/vapor-parser.jar;./asmgen/" VM2M < vaporM-file > asm-file
 ```
 To generate the `hw4.tgz` required by `Phase4Tester`:
 
@@ -367,7 +367,7 @@ mkdir hw4/regalloc
 cp -r asmgen hw4/
 cp codgen/Output.java hw4/codegen/
 cp regalloc/Register.java hw4/regalloc/
-cp VM2M.java hw4/
+mv hw4/asmgen/VM2M.java hw4/
 tar zcf hw4.tgz hw4/
 rm -rf hw4
 ```
