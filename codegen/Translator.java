@@ -1,5 +1,6 @@
 package codegen;
 
+import java.io.*;
 import java.util.*;
 
 import syntaxtree.*;
@@ -8,7 +9,15 @@ import typecheck.*;
 public class Translator {
     private ClassRecordManager cr = new ClassRecordManager();
     private LabelManager label = new LabelManager();
-    private Output out = new Output(System.out);
+    private Output out;
+
+    public Translator() {
+        out = new Output(System.out);
+    }
+
+    public Translator(PrintStream s) {
+        out = new Output(s);
+    }
 
     public ClassRecordManager getClassRecordManager() {
         return cr;
