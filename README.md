@@ -369,7 +369,7 @@ cp codgen/Output.java hw4/codegen/
 cp regalloc/Register.java hw4/regalloc/
 cp VM2M.java hw4/
 tar zcf hw4.tgz hw4/
-rm -rf hw1
+rm -rf hw4
 ```
 
 ### Test Result
