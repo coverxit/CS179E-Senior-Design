@@ -1,6 +1,8 @@
+package codegen;
+
+import parser.*;
 import syntaxtree.*;
 import typecheck.*;
-import codegen.*;
 
 public class J2V {
     public static void main(String args[]) throws ParseException {

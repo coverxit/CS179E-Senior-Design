@@ -1,4 +1,4 @@
-import regalloc.*;
+package regalloc;
 
 import cs132.util.*;
 import cs132.vapor.parser.*;

@@ -1,4 +1,4 @@
-import asmgen.*;
+package asmgen;
 
 import cs132.util.*;
 import cs132.vapor.parser.*;

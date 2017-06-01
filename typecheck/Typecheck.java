@@ -1,5 +1,7 @@
+package typecheck;
+
+import parser.*;
 import syntaxtree.*;
-import typecheck.*;
 
 public class Typecheck {
     public static void main(String[] args) {
