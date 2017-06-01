@@ -1,9 +1,9 @@
 package asmgen;
 
 import codegen.Output;
+import regalloc.Register;
 
 import cs132.vapor.ast.*;
-import regalloc.Register;
 
 import java.util.*;
 
@@ -21,10 +21,10 @@ public class Assembler {
         out.writeLine();
 
         for (VDataSegment seg : segments) {
-            out.writeLine(seg.ident);
+            out.writeLine(seg.ident + ":");
             out.increaseIndent();
             for (VOperand.Static label : seg.values) {
-                out.writeLine(label.toString());
+                out.writeLine(((VLabelRef) label).ident);
             }
             out.decreaseIndent();
             out.writeLine();
@@ -33,14 +33,19 @@ public class Assembler {
 
     public void outputTextSegment() {
         out.writeLine(".text");
+        out.increaseIndent();
         out.writeLine();
         AsmGenHelper.jal("Main");
         AsmGenHelper.li(Register.v0, 10); // 10: exit
         AsmGenHelper.syscall();
         out.writeLine();
+        out.decreaseIndent();
     }
 
     public void outputFunction(VFunction func) {
+        // +2 for $fp and $ra
+        int stackSize = (func.stack.out + func.stack.local + 2) * 4;
+
         out.writeLine(func.ident + ":");
         out.increaseIndent();
 
@@ -50,7 +55,10 @@ public class Assembler {
             labels.computeIfAbsent(l.instrIndex, k -> new LinkedHashSet<>()).add(l.ident);
 
         // Adjust stack
-
+        AsmGenHelper.sw(Register.fp, -8, Register.sp);
+        AsmGenHelper.move(Register.fp, Register.sp);
+        AsmGenHelper.subu(Register.sp, Register.sp, Integer.toString(stackSize));
+        AsmGenHelper.sw(Register.ra, -4, Register.fp);
 
         for (int i = 0; i < func.body.length; i++) {
             // Output labels
@@ -169,6 +177,9 @@ public class Assembler {
                 @Override
                 public void visit(VReturn vReturn) {
                     // Balance stack
+                    AsmGenHelper.lw(Register.ra, -4, Register.fp);
+                    AsmGenHelper.lw(Register.fp, -8, Register.fp);
+                    AsmGenHelper.addu(Register.sp, Register.sp, Integer.toString(stackSize));
 
                     AsmGenHelper.jr(Register.ra);
                 }
@@ -187,8 +198,7 @@ public class Assembler {
             AsmGenHelper.li(Register.v0, 1); // 1: print integer
             AsmGenHelper.syscall();
             AsmGenHelper.la(Register.a0, "_lf");
-            AsmGenHelper.syscall();
-            AsmGenHelper.li(Register.v0, 4); // 4: pritn string
+            AsmGenHelper.li(Register.v0, 4); // 4: print string
             AsmGenHelper.syscall();
             AsmGenHelper.jr(Register.ra);
             out.decreaseIndent();
