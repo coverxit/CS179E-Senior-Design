@@ -6,10 +6,15 @@ import cs132.vapor.ast.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.io.*;
 
 public class Converter {
-    private Output out = new Output(System.out);
+    private Output out;
     private RegisterPool localPool = RegisterPool.CreateLocalPool();
+
+    public Converter(PrintStream s) {
+        out = new Output(s);
+    }
 
     public Output getOutput() {
         return out;

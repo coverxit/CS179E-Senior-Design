@@ -6,7 +6,7 @@ import regalloc.Register;
 import cs132.vapor.ast.*;
 
 public class AsmGenHelper {
-    private static Output out = null;
+    private static Output out;
 
     public AsmGenHelper(Output o) {
         out = o;

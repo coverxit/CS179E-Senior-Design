@@ -4,7 +4,7 @@ import java.io.*;
 
 public class ErrorMessage {
     private static boolean errors = false;
-    private static PrintStream out = System.out;
+    private static PrintStream out = System.err;
 
     public static void setOutput(PrintStream s) {
         out = s;

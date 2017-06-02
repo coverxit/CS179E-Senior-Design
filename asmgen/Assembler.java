@@ -6,11 +6,16 @@ import regalloc.Register;
 import cs132.vapor.ast.*;
 
 import java.util.*;
+import java.io.*;
 
 public class Assembler {
-    private final Output out = new Output(System.out);
+    private Output out;
     private Set<VBuiltIn.Op> builtInUsed = new HashSet<>();
     private List<String> litStr = new ArrayList<>();
+
+    public Assembler(PrintStream s) {
+        out = new Output(s);
+    }
 
     public Output getOutput() {
         return out;

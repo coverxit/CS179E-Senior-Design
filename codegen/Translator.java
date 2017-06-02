@@ -11,10 +11,6 @@ public class Translator {
     private LabelManager label = new LabelManager();
     private Output out;
 
-    public Translator() {
-        out = new Output(System.out);
-    }
-
     public Translator(PrintStream s) {
         out = new Output(s);
     }

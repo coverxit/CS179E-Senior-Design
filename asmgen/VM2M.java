@@ -7,6 +7,7 @@ import cs132.vapor.ast.VBuiltIn.Op;
 
 import java.io.*;
 import java.util.*;
+import java.nio.charset.*;
 
 public class VM2M {
     public static VaporProgram parseVaporM(InputStream in) throws ProblemException, IOException {
@@ -28,10 +29,11 @@ public class VM2M {
                 false, registers, true);
     }
 
-    public static void main(String[] args) throws ProblemException, IOException {
-        Assembler asm = new Assembler();
+    public static ByteArrayOutputStream VM2M(InputStream in) throws ProblemException, IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Assembler asm = new Assembler(new PrintStream(out));
         new AsmGenHelper(asm.getOutput());
-        VaporProgram program = parseVaporM(System.in);
+        VaporProgram program = parseVaporM(in);
 
         asm.outputDataSegment(program.dataSegments);
         asm.outputTextSegment();
@@ -39,5 +41,10 @@ public class VM2M {
             asm.outputFunction(func);
         asm.outputBuiltInFunctions();
         asm.outputConstSegment();
+        return out;
+    }
+
+    public static void main(String[] args) throws ProblemException, IOException {
+        System.out.print(new String(VM2M(System.in).toByteArray(), StandardCharsets.UTF_8));
     }
 }

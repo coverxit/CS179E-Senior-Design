@@ -7,6 +7,7 @@ import cs132.vapor.ast.VBuiltIn.Op;
 
 import java.io.*;
 import java.util.*;
+import java.nio.charset.*;
 
 public class V2VM {
     public static VaporProgram parseVapor(InputStream in) throws ProblemException, IOException {
@@ -20,10 +21,11 @@ public class V2VM {
                     true, null, false);
     }
 
-    public static void main(String[] args) throws ProblemException, IOException {
+    public static ByteArrayOutputStream V2VM(InputStream in) throws ProblemException, IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
         Allocator allocator = new Allocator();
-        Converter converter = new Converter();
-        VaporProgram program = parseVapor(System.in);
+        Converter converter = new Converter(new PrintStream(out));
+        VaporProgram program = parseVapor(in);
 
         converter.outputConstSegment(program.dataSegments);
         for (VFunction func : program.functions) {
@@ -36,5 +38,10 @@ public class V2VM {
             converter.outputFunction(func, map, liveness);
             converter.getOutput().writeLine();
         }
+        return out;
+    }
+
+    public static void main(String[] args) throws ProblemException, IOException {
+        System.out.print(new String(V2VM(System.in).toByteArray(), StandardCharsets.UTF_8));
     }
 }

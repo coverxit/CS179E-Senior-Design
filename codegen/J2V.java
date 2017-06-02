@@ -11,6 +11,6 @@ public class J2V {
         Scope env = new Scope(program);
 
         program.accept(new FirstPhaseVisitor(), env);
-        program.accept(new CodeGenVisitor(), new CodeGenPair(env, new Translator()));
+        program.accept(new CodeGenVisitor(), new CodeGenPair(env, new Translator(System.out)));
     }
 }
