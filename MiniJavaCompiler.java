@@ -26,12 +26,13 @@ public class MiniJavaCompiler {
     }
 
     public static void compile(String file, boolean v, boolean vm, boolean asm) {
+        String rawName = FilenameUtils.removeExtension(file);
+
         try {
             InputStream in = new FileInputStream(file);
-            String rawName = FilenameUtils.removeExtension(file);
 
             // Lexer & Parser
-            new MiniJavaParser(in);
+            MiniJavaParser.ReInit(in);
             Goal minijava = MiniJavaParser.Goal();
             ErrorMessage.setOutput(System.err);
 
@@ -59,6 +60,11 @@ public class MiniJavaCompiler {
             }
         } catch (TokenMgrError | parser.ParseException e) {
             System.out.println(e.getMessage());
+
+            // Remove all files generated before if failed.
+            new File(rawName + ".vapor").delete();
+            new File(rawName + ".vaporm").delete();
+            new File(rawName + ".s").delete();
         } catch (ProblemException | IOException e) {
             e.printStackTrace();
         }
@@ -67,11 +73,11 @@ public class MiniJavaCompiler {
     public static void main(String args[]) {
         Options options = new Options();
         options.addOption("v", "vapor", false,
-                "Run the intermediate code generation stage, producing the corresponding Vapor code file.");
+                "Run the intermediate code generation stage, producing a Vapor code file.");
         options.addOption("vm", "vaporM", false,
-                "Run the register allocation stage, producing the corresponding VaporM code file.");
+                "Run the register allocation stage, producing a VaporM code file.");
         options.addOption("asm", "assembly", false,
-                "(Default) Run the instruction selection stage, producing the corresponding MIPS assembly file.");
+                "(Default) Run the instruction selection stage, producing a MIPS assembly file.");
 
         try {
             CommandLine cmd = new DefaultParser().parse(options, args);
@@ -85,6 +91,9 @@ public class MiniJavaCompiler {
                     printMessage("file not found: " + f);
                     printHelp(options);
                 });
+
+                // Trick for fixing the ReInit requirement
+                new MiniJavaParser(System.in);
 
                 boolean asm = cmd.hasOption("asm") || (!cmd.hasOption("v") && !cmd.hasOption("vm"));
                 files.forEach(f -> compile(f, cmd.hasOption("v"), cmd.hasOption("vm"), asm));
