@@ -9,6 +9,7 @@ import cs132.util.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.function.*;
 
 import org.apache.commons.cli.*;
 import org.apache.commons.io.*;
@@ -25,11 +26,46 @@ public class MiniJavaCompiler {
         System.exit(1);
     }
 
-    public static void compile(String file, boolean v, boolean vm, boolean asm) {
-        String rawName = FilenameUtils.removeExtension(file);
+    public static void lexerError(String fileName, TokenMgrError err) {
+        System.err.print(fileName + " (" + err.errorLine + "): ");
+        System.err.print("unexpected character '" + (err.eofSeen ? "<EOF>" : String.valueOf(err.curChar)) + "'");
+        if (err.errorAfter.isEmpty())
+            System.err.println();
+        else
+            System.err.println(" after '" + err.errorAfter + "'");
+    }
+
+    public static void parserError(String fileName, parser.ParseException err) {
+        System.err.print(fileName + " (" + err.currentToken.next.beginLine + "): ");
+        System.err.print("encountered '");
+        System.err.print(err.currentToken.next.image);
+        System.err.print("', expecting ");
+        StringBuilder sb = new StringBuilder();
+        Arrays.stream(err.expectedTokenSequences).forEach(
+                first -> Arrays.stream(first).forEach(
+                        second -> {
+                            sb.append(err.tokenImage[second]);
+                            sb.append(", ");
+                        }));
+        System.err.println(sb.delete(sb.length() - 2, sb.length()));
+    }
+
+    public static void compile(String path, boolean v, boolean vm, boolean asm) {
+        String fileName = FilenameUtils.getName(path);
+        String rawName = FilenameUtils.removeExtension(path);
+
+        Consumer<String> remove = r -> {
+            String[] ext = { ".vapor", ".vaprom", ".s" };
+
+            // Remove all files generated before if failed.
+            Arrays.stream(ext)
+                    .map(e -> rawName + e)
+                    .filter(e -> !fileName.equals(e))
+                    .forEach(e -> new File(e).delete());
+        };
 
         try {
-            InputStream in = new FileInputStream(file);
+            InputStream in = new FileInputStream(path);
 
             // Lexer & Parser
             MiniJavaParser.ReInit(in);
@@ -58,13 +94,12 @@ public class MiniJavaCompiler {
                     if (asm) new FileOutputStream(rawName + ".s").write(mips.toByteArray());
                 }
             }
-        } catch (TokenMgrError | parser.ParseException e) {
-            System.out.println(e.getMessage());
-
-            // Remove all files generated before if failed.
-            new File(rawName + ".vapor").delete();
-            new File(rawName + ".vaporm").delete();
-            new File(rawName + ".s").delete();
+        } catch (TokenMgrError e) {
+            lexerError(fileName, e);
+            remove.accept(rawName);
+        } catch (parser.ParseException e) {
+            parserError(fileName, e);
+            remove.accept(rawName);
         } catch (ProblemException | IOException e) {
             e.printStackTrace();
         }

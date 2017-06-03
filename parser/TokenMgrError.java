@@ -19,6 +19,11 @@ public class TokenMgrError extends Error {
    * Ordinals for various reasons why an Error of this type can be thrown.
    */
 
+    public String errorAfter;
+    public char curChar;
+    public boolean eofSeen;
+    public int errorLine;
+
     /**
      * Lexical error occurred.
      */
@@ -149,6 +154,10 @@ public class TokenMgrError extends Error {
      */
     public TokenMgrError(boolean EOFSeen, int lexState, int errorLine, int errorColumn, String errorAfter, char curChar, int reason) {
         this(LexicalError(EOFSeen, lexState, errorLine, errorColumn, errorAfter, curChar), reason);
+        this.errorAfter = errorAfter;
+        this.curChar = curChar;
+        this.eofSeen = EOFSeen;
+        this.errorLine = errorLine;
     }
 }
 /* JavaCC - OriginalChecksum=3f827858bf5c87e5502cccca67d9b325 (do not edit this line) */
