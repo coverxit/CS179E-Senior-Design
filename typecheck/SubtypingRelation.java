@@ -22,10 +22,7 @@ public class SubtypingRelation {
     }
 
     public static boolean isSubtyping(Symbol child, Symbol base) {
-        if (relation.containsKey(base))
-            return relation.get(base).contains(child);
-        else
-            return false;
+        return relation.containsKey(base) && relation.get(base).contains(child);
     }
 
     public static boolean contains(Symbol c) {

@@ -353,8 +353,7 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
 
         VariableLabel lhs = CodeGenHelper.retrieveDerefOrFuncCall(n.f0.accept(this, p), p);
         VariableLabel rhs = CodeGenHelper.retrieveDerefOrFuncCall(n.f2.accept(this, p), p);
-        VariableLabel imm = lm.functionCall(CodeGenHelper.LtS(lhs.toString(), rhs.toString()));
-        return imm;
+        return lm.functionCall(CodeGenHelper.LtS(lhs.toString(), rhs.toString()));
     }
 
     /*
@@ -368,8 +367,7 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
 
         VariableLabel lhs = CodeGenHelper.retrieveDerefOrFuncCall(n.f0.accept(this, p), p);
         VariableLabel rhs = CodeGenHelper.retrieveDerefOrFuncCall(n.f2.accept(this, p), p);
-        VariableLabel imm = lm.functionCall(CodeGenHelper.Add(lhs.toString(), rhs.toString()));
-        return imm;
+        return lm.functionCall(CodeGenHelper.Add(lhs.toString(), rhs.toString()));
     }
 
     /*
@@ -383,8 +381,7 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
 
         VariableLabel lhs = CodeGenHelper.retrieveDerefOrFuncCall(n.f0.accept(this, p), p);
         VariableLabel rhs = CodeGenHelper.retrieveDerefOrFuncCall(n.f2.accept(this, p), p);
-        VariableLabel imm = lm.functionCall(CodeGenHelper.Sub(lhs.toString(), rhs.toString()));
-        return imm;
+        return lm.functionCall(CodeGenHelper.Sub(lhs.toString(), rhs.toString()));
     }
 
     /*
@@ -398,8 +395,7 @@ public class CodeGenVisitor extends GJDepthFirst<VariableLabel, CodeGenPair> {
 
         VariableLabel lhs = CodeGenHelper.retrieveDerefOrFuncCall(n.f0.accept(this, p), p);
         VariableLabel rhs = CodeGenHelper.retrieveDerefOrFuncCall(n.f2.accept(this, p), p);
-        VariableLabel imm = lm.functionCall(CodeGenHelper.MulS(lhs.toString(), rhs.toString()));
-        return imm;
+        return lm.functionCall(CodeGenHelper.MulS(lhs.toString(), rhs.toString()));
     }
 
     /*
