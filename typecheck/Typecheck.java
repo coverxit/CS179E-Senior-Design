@@ -13,12 +13,12 @@ public class Typecheck {
             Scope env = new Scope(program);
 
             program.accept(new FirstPhaseVisitor(), env);
-            if (ErrorMessage.anyErrors()) {
+            if (ErrorMessage.hasErrors()) {
                 System.out.println("Type error");
                 System.exit(1);
             } else {
                 program.accept(new SecondPhaseVisitor(), env);
-                if (ErrorMessage.anyErrors()) {
+                if (ErrorMessage.hasErrors()) {
                     System.out.println("Type error");
                     System.exit(1);
                 } else {
