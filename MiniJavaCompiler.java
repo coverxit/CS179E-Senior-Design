@@ -27,7 +27,7 @@ public class MiniJavaCompiler {
     }
 
     public static void lexerError(String fileName, TokenMgrError err) {
-        System.err.print(fileName + " (" + err.errorLine + "): ");
+        System.err.print(fileName + " (" + err.errorLine + "): error: ");
         System.err.print("unexpected character '" + (err.eofSeen ? "<EOF>" : String.valueOf(err.curChar)) + "'");
         if (err.errorAfter.isEmpty())
             System.err.println();
@@ -36,7 +36,7 @@ public class MiniJavaCompiler {
     }
 
     public static void parserError(String fileName, parser.ParseException err) {
-        System.err.print(fileName + " (" + err.currentToken.next.beginLine + "): ");
+        System.err.print(fileName + " (" + err.currentToken.next.beginLine + "): error: ");
         System.err.print("encountered '");
         System.err.print(err.currentToken.next.image);
         System.err.print("', expecting ");
@@ -47,7 +47,7 @@ public class MiniJavaCompiler {
                             sb.append(err.tokenImage[second]);
                             sb.append(", ");
                         }));
-        System.err.println(sb.delete(sb.length() - 2, sb.length()));
+        System.err.println(sb.delete(sb.length() - 2, sb.length()).toString());
     }
 
     public static void compile(String path, boolean v, boolean vm, boolean asm) {
@@ -70,16 +70,18 @@ public class MiniJavaCompiler {
             // Lexer & Parser
             MiniJavaParser.ReInit(in);
             Goal minijava = MiniJavaParser.Goal();
-            ErrorMessage.setOutput(System.err);
+            ErrorMessage.setFileName(fileName);
 
             // Phase 1-1: Type Checking (first pass)
             Scope env = new Scope(minijava);
             minijava.accept(new FirstPhaseVisitor(), env);
-            if (!ErrorMessage.anyErrors()) {
+            if (ErrorMessage.hasErrors()) {
+                ErrorMessage.printErrors(System.err);
+            } else {
                 // Phase 1-2: Type Checking (second pass)
                 minijava.accept(new SecondPhaseVisitor(), env);
 
-                if (!ErrorMessage.anyErrors()) {
+                if (!ErrorMessage.hasErrors()) {
                     // Phase 2: Intermediate Code Generation
                     ByteArrayOutputStream vapor = new ByteArrayOutputStream();
                     minijava.accept(new CodeGenVisitor(), new CodeGenPair(env, new Translator(new PrintStream(vapor))));

@@ -80,16 +80,21 @@ public class TypeCheckHelper {
         return id.f0.tokenImage;
     }
 
-    public static String getParameters(FormalParameterList fpl)
-    {
-	String params = "";
-	params = params + identifierName(fpl.f0.f1);
-	return params;
+    public static int identifierLine(Identifier id) {
+        return id.f0.beginLine;
     }
 
-    public static boolean parameterDistinct(FormalParameterList fpl) {
+    public static String getParameters(FormalParameterList fpl)
+    {
+        String params = "";
+        params = params + identifierName(fpl.f0.f1);
+        return params;
+    }
+
+    public static List<Identifier> parameterDistinct(FormalParameterList fpl) {
         // Check if FormalParameterList() are pairwise distinct
         Set<String> declared = new HashSet<>();
+        List<Identifier> duplicate = new ArrayList<>();
 
         /*
          * Grammar production:
@@ -111,43 +116,50 @@ public class TypeCheckHelper {
              * f0 -> ","
              * f1 -> FormalParameter()
              */
-            String id = TypeCheckHelper.identifierName(((FormalParameterRest) e.nextElement()).f1.f1);
+            Identifier nt = ((FormalParameterRest) e.nextElement()).f1.f1;
+            String id = TypeCheckHelper.identifierName(nt);
 
             if (declared.contains(id))
-                return false;
+                duplicate.add(nt);
             else
                 declared.add(id);
         }
-        return true;
+        return duplicate;
     }
 
-    public static boolean variableDistinct(NodeListInterface vds) {
+    public static List<Identifier> variableDistinct(NodeListInterface vds) {
         // Checks if ( VarDeclaration() )* are pairwise distinct
         Set<String> declared = new HashSet<>();
+        List<Identifier> duplicate = new ArrayList<>();
 
         for (Enumeration<Node> e = vds.elements(); e.hasMoreElements(); ) {
+            Identifier n = ((VarDeclaration) e.nextElement()).f1;
+
             /*
              * Grammar production:
              * f0 -> Type()
              * f1 -> Identifier()
              * f2 -> ";"
              */
-            String id = TypeCheckHelper.identifierName(((VarDeclaration) e.nextElement()).f1);
+            String id = TypeCheckHelper.identifierName(n);
 
             if (declared.contains(id))
-                return false;
+                duplicate.add(n);
             else
                 declared.add(id);
         }
 
-        return true;
+        return duplicate;
     }
 
-    public static boolean methodDistinct(NodeListInterface mds) {
+    public static List<Identifier> methodDistinct(NodeListInterface mds) {
         // Checks if ( MethodDeclaration() )* are pairwise distinct
         Set<String> declared = new HashSet<>();
+        List<Identifier> duplicate = new ArrayList<>();
 
         for (Enumeration<Node> e = mds.elements(); e.hasMoreElements(); ) {
+            Node n = e.nextElement();
+
             /*
              * Grammar production:
              * f0 -> "public"
@@ -164,24 +176,26 @@ public class TypeCheckHelper {
              * f11 -> ";"
              * f12 -> "}"
              */
-            String id = TypeCheckHelper.methodName(e.nextElement());
+            String id = TypeCheckHelper.methodName(n);
 
             if (declared.contains(id))
-                return false;
+                duplicate.add(((MethodDeclaration) n).f2);
             else
                 declared.add(id);
         }
 
-        return true;
+        return duplicate;
     }
 
-    public static boolean classDistinct(NodeListInterface tds) {
+    public static List<Identifier> classDistinct(NodeListInterface tds) {
         // Checks if ( TypeDeclaration() )* are pairwise distinct
         Set<String> declared = new HashSet<>();
+        List<Identifier> duplicate = new ArrayList<>();
 
         for (Enumeration<Node> e = tds.elements(); e.hasMoreElements(); ) {
             String id;
             Node n = e.nextElement();
+            Identifier nt;
 
             if (n instanceof MainClass) {
                 /*
@@ -206,22 +220,29 @@ public class TypeCheckHelper {
                  * f17 -> "}"
                  */
                 id = TypeCheckHelper.className(n);
+                nt = ((MainClass) n).f1;
             } else { // n instanceof TypeDeclaration
                 /*
                  * Grammar production:
                  * f0 -> ClassDeclaration()
                  *       | ClassExtendsDeclaration()
                  */
-                id = TypeCheckHelper.className(((TypeDeclaration) n).f0.choice);
+                Node choice = ((TypeDeclaration) n).f0.choice;
+                id = TypeCheckHelper.className(choice);
+
+                if (choice instanceof ClassDeclaration)
+                    nt = ((ClassDeclaration) choice).f1;
+                else // choice instanceof ClassExtendsDeclaration
+                    nt = ((ClassExtendsDeclaration) choice).f1;
             }
 
             if (declared.contains(id))
-                return false;
+                duplicate.add(nt);
             else
                 declared.add(id);
         }
 
-        return true;
+        return duplicate;
     }
 
     public static MethodType methodType(MethodDeclaration m) {

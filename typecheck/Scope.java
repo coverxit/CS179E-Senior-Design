@@ -36,10 +36,12 @@ public class Scope {
     }
 
     public Binder lookupLocal(Symbol s) {
-        Binder b = table.get(s);
+        return table.get(s);
+    }
 
-        if (b != null)
-            return b;
+    public Binder lookupParent(Symbol s) {
+        if (parent != null)
+            return parent.lookup(s);
         else
             return null;
     }

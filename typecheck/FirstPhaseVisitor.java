@@ -7,6 +7,7 @@ import visitor.*;
 
 /**
  * The first pass builds the symbol table, checks overloading and all distinct properties.
+ * Also the first pass analyze the class definitions, allowing child classes defined before their base classes.
  */
 public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
     /*
@@ -23,12 +24,13 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
         }
 
         // distinct(classname(mc),classname(d1),...,classname(dn))
-        if (TypeCheckHelper.classDistinct(cl)) {
-            n.f0.accept(this, s);
-            n.f1.accept(this, s);
-        } else {
-            ErrorMessage.complain("Goal: Class identifiers are not pairwise distinct.");
-        }
+        TypeCheckHelper.classDistinct(cl).stream().map(d -> new Object() {
+            int line = TypeCheckHelper.identifierLine(d);
+            String name = TypeCheckHelper.identifierName(d);
+        }).forEach(it -> ErrorMessage.complain(it.line, "duplicate class: " + it.name));
+
+        n.f0.accept(this, s);
+        n.f1.accept(this, s);
     }
 
     /*
@@ -62,13 +64,14 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
         // Method `public static void main(String[] id)` is ignored for overloading check,
         // since we all know parser would complain if some other classes defined this method.
         // distinct(id1,...,idr)
-        if (TypeCheckHelper.variableDistinct(n.f14)) {
-            n.f14.accept(this, ns);
-            // Skip `( Statement() )*`
-        } else {
-            ErrorMessage.complain("MainClass: Variable identifiers are not pairwise distinct. " +
-                    "In class " + id.toString());
-        }
+        TypeCheckHelper.variableDistinct(n.f14).stream().map(d -> new Object() {
+            int line = TypeCheckHelper.identifierLine(d);
+            String name = TypeCheckHelper.identifierName(d);
+        }).forEach(it -> ErrorMessage.complain(it.line,
+                "variable " + it.name + " is already defined in method main(String[])"));
+
+        n.f14.accept(this, ns);
+        // Skip `( Statement() )*`
     }
 
     /*
@@ -88,19 +91,22 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
         s.add(id, n, ns);
 
         // distinct(id1,...,idf)
-        if (TypeCheckHelper.variableDistinct(n.f3)) {
-            n.f3.accept(this, ns);
+        TypeCheckHelper.variableDistinct(n.f3).stream().map(d -> new Object() {
+            int line = TypeCheckHelper.identifierLine(d);
+            String name = TypeCheckHelper.identifierName(d);
+        }).forEach(it -> ErrorMessage.complain(it.line,
+                "variable " + it.name + " is already defined in class " + id.toString()));
 
-            // distinct(methodname(m1),...methodname(mk))
-            if (TypeCheckHelper.methodDistinct(n.f4))
-                n.f4.accept(this, ns);
-            else
-                ErrorMessage.complain("ClassDeclaration: Overloading is not allowed. " +
-                        "In class " + id.toString());
-        } else {
-            ErrorMessage.complain("ClassDeclaration: Variable identifiers are not pairwise distinct. " +
-                    "In class " + id.toString());
-        }
+        // distinct(methodname(m1),...methodname(mk))
+        TypeCheckHelper.methodDistinct(n.f4).stream().map(d -> new Object() {
+            int line = TypeCheckHelper.identifierLine(d);
+            String name = TypeCheckHelper.identifierName(d);
+        }).forEach(it -> ErrorMessage.complain(it.line,
+                "method " + it.name + " is already defined in class " +
+                        id.toString() + " (overloading is not allowed)"));
+
+        n.f3.accept(this, ns);
+        n.f4.accept(this, ns);
     }
 
     /*
@@ -127,22 +133,25 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
             s.add(id, n, ns);
 
             // distinct(id1,...,idf)
-            if (TypeCheckHelper.variableDistinct(n.f5)) {
-                n.f5.accept(this, ns);
+            TypeCheckHelper.variableDistinct(n.f5).stream().map(d -> new Object() {
+                int line = TypeCheckHelper.identifierLine(d);
+                String name = TypeCheckHelper.identifierName(d);
+            }).forEach(it -> ErrorMessage.complain(it.line,
+                    "variable " + it.name + " is already defined in class " + id.toString()));
 
-                // distinct(methodname(m1),...methodname(mk))
-                if (TypeCheckHelper.methodDistinct(n.f6))
-                    n.f6.accept(this, ns);
-                else
-                    ErrorMessage.complain("ClassExtendsDeclaration: Overloading is not allowed. " +
-                            "In class " + id.toString());
-            } else {
-                ErrorMessage.complain("ClassExtendsDeclaration: Variable identifiers are not pairwise distinct. " +
-                        "In class " + id.toString());
-            }
+            // distinct(methodname(m1),...methodname(mk))
+            TypeCheckHelper.methodDistinct(n.f6).stream().map(d -> new Object() {
+                int line = TypeCheckHelper.identifierLine(d);
+                String name = TypeCheckHelper.identifierName(d);
+            }).forEach(it -> ErrorMessage.complain(it.line,
+                    "method " + it.name + " is already defined in class " +
+                            id.toString() + " (overloading is not allowed)"));
+
+            n.f5.accept(this, ns);
+            n.f6.accept(this, ns);
         } else {
-            ErrorMessage.complain("ClassExtendsDeclaration: Base class '" + base.toString() + "' is not defined. " +
-                    "In class " + id.toString());
+            ErrorMessage.complain(TypeCheckHelper.identifierLine(n.f3),
+                    "cannot find symbol: class " + TypeCheckHelper.identifierName(n.f3));
         }
     }
 
@@ -164,18 +173,22 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
     @Override
     public void visit(MethodDeclaration n, Scope s) {
         Symbol id = Symbol.fromString(TypeCheckHelper.methodName(n));
-        Binder b = s.lookup(id);
+        Binder b = s.lookupParent(id);
+        MethodType type = TypeCheckHelper.methodType(n);
 
         // Overloading check
         // noOverloading(id,idp,methodname(mi))
         if (b != null) {
             MethodType base = TypeCheckHelper.methodType((MethodDeclaration) b.getType());
-            MethodType inherit = TypeCheckHelper.methodType(n);
 
             // Guarantee only overriding
-            if (!base.equals(inherit)) {
-                ErrorMessage.complain("MethodDeclaration: Overloading is not allowed. " +
-                        "Method: " + id.toString());
+            if (!base.equals(type)) {
+                ErrorMessage.complain(TypeCheckHelper.identifierLine(n.f2),
+                        "method " + TypeCheckHelper.className(s.getNodeBound()) + "." +
+                                TypeCheckHelper.methodName(n)  + type.getSignature() + " differs from " +
+                                TypeCheckHelper.className(b.getScope().getParent().getNodeBound()) + "." +
+                                TypeCheckHelper.methodName(n) + base.getSignature() + " in signature " +
+                                "(overloading is not allowed)");
             }
         }
 
@@ -184,21 +197,21 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
 
         if (n.f4.present()) {
             // distinct(idf1,...,idfn)
-            if (TypeCheckHelper.parameterDistinct((FormalParameterList) n.f4.node)) {
-                n.f4.accept(this, ns);
-            } else {
-                ErrorMessage.complain("MethodDeclaration: Parameter identifiers are not pairwise distinct. " +
-                        "In method " + id.toString());
-            }
+            TypeCheckHelper.parameterDistinct((FormalParameterList) n.f4.node).stream().map(d -> new Object() {
+                int line = TypeCheckHelper.identifierLine(d);
+                String name = TypeCheckHelper.identifierName(d);
+            }).forEach(it -> ErrorMessage.complain(it.line,
+                    "parameter " + it.name + " is already defined in method " + id.toString()));
+
+            n.f4.accept(this, ns);
         }
 
         // distinct(id1,...,idr)
-        if (TypeCheckHelper.variableDistinct(n.f7)) {
-            n.f7.accept(this, ns);
-        } else {
-            ErrorMessage.complain("MethodDeclaration: Variable identifiers are not pairwise distinct. " +
-                    "In method " + id.toString());
-        }
+        TypeCheckHelper.variableDistinct(n.f7).stream().map(d -> new Object() {
+            int line = TypeCheckHelper.identifierLine(d);
+            String name = TypeCheckHelper.identifierName(d);
+        }).forEach(it -> ErrorMessage.complain(it.line,
+                "variable " + it.name + " is already defined in method " + id.toString() + type.getSignature()));
     }
 
     /*

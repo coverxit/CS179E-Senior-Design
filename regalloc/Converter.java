@@ -222,16 +222,12 @@ public class Converter {
                         if (arg instanceof VVarRef) {
                             Register src = loadVariable(map, arg.toString(), false);
                             srcregs.add(src);
-
-                            rhs.append(src.toString());
-                            rhs.append(" ");
+                            rhs.append(src.toString()).append(" ");
                         } else {
-                            rhs.append(arg.toString());
-                            rhs.append(" ");
+                            rhs.append(arg.toString()).append(" ");
                         }
                     }
-                    rhs.deleteCharAt(rhs.length() - 1);
-                    rhs.append(")");
+                    rhs.deleteCharAt(rhs.length() - 1).append(")");
 
                     for (Register src : srcregs)
                         releaseLocalRegister(src);

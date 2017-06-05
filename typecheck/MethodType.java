@@ -19,6 +19,15 @@ public class MethodType {
         return returnType;
     }
 
+    public String getSignature() {
+        StringBuilder sb = new StringBuilder("(");
+        if (!parameters.isEmpty()) {
+            parameters.forEach(p -> sb.append(p).append(", "));
+            sb.delete(sb.length() - 2, sb.length());
+        }
+        return sb.append(")").toString();
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null || !(obj instanceof MethodType))
