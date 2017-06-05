@@ -20,7 +20,7 @@ public class ErrorMessage {
         hasErrors = true;
 
         StringBuilder sb = new StringBuilder();
-        sb.append(fileName + " (" + Integer.toString(lineNo) + "): error: ");
+        sb.append(fileName).append(" (").append(Integer.toString(lineNo)).append("): error: ");
         sb.append(msg);
         errors.computeIfAbsent(lineNo, l -> new ArrayList<>()).add(sb.toString());
     }
