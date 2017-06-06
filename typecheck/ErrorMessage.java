@@ -25,10 +25,6 @@ public class ErrorMessage {
         errors.computeIfAbsent(lineNo, l -> new ArrayList<>()).add(sb.toString());
     }
 
-    public static void complain(String msg) {
-        complain(-1, msg);
-    }
-
     public static void printErrors(PrintStream out) {
         errors.forEach((k, v) -> v.forEach(out::println));
     }
