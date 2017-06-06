@@ -35,15 +35,30 @@ public class Scope {
             return null;
     }
 
+    public Binder lookupVar(Symbol s) {
+        Binder b = table.get(s);
+
+        if (b != null) {
+            return (b.getType() instanceof VarDeclaration || b.getType() instanceof FormalParameter) ? b : null;
+        } else if (parent != null) {
+            return parent.lookupVar(s);
+        } else {
+            return null;
+        }
+    }
+
     public Binder lookupLocal(Symbol s) {
         return table.get(s);
     }
 
-    public Binder lookupParent(Symbol s) {
-        if (parent != null)
-            return parent.lookup(s);
-        else
+    public Binder lookupLocalVar(Symbol s) {
+        Binder b = table.get(s);
+
+        if (b != null) {
+            return (b.getType() instanceof VarDeclaration || b.getType() instanceof FormalParameter) ? b : null;
+        } else {
             return null;
+        }
     }
 
     public Iterator<Binder> symbolIterator() {

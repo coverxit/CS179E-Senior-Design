@@ -50,7 +50,7 @@ public class CodeGenHelper {
     public static VariableLabel identifierLabel(Symbol id, CodeGenPair p)
     {
         VariableLabel label;
-        Binder b = p.getScope().lookupLocal(id);
+        Binder b = p.getScope().lookupLocalVar(id);
         Translator t = p.getTranslator();
 
         // if identifier found locally, no need to declare temp variable.

@@ -24,13 +24,16 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
         }
 
         // distinct(classname(mc),classname(d1),...,classname(dn))
-        TypeCheckHelper.classDistinct(cl).stream().map(d -> new Object() {
+        List<Identifier> dupc = TypeCheckHelper.classDistinct(cl);
+        dupc.stream().map(d -> new Object() {
             int line = TypeCheckHelper.identifierLine(d);
             String name = TypeCheckHelper.identifierName(d);
         }).forEach(it -> ErrorMessage.complain(it.line, "duplicate class: " + it.name));
 
-        n.f0.accept(this, s);
-        n.f1.accept(this, s);
+        if (dupc.isEmpty()) {
+            n.f0.accept(this, s);
+            n.f1.accept(this, s);
+        }
     }
 
     /*
@@ -64,13 +67,16 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
         // Method `public static void main(String[] id)` is ignored for overloading check,
         // since we all know parser would complain if some other classes defined this method.
         // distinct(id1,...,idr)
-        TypeCheckHelper.variableDistinct(n.f14).stream().map(d -> new Object() {
+        List<Identifier> dupv = TypeCheckHelper.variableDistinct(n.f14);
+        dupv.stream().map(d -> new Object() {
             int line = TypeCheckHelper.identifierLine(d);
             String name = TypeCheckHelper.identifierName(d);
         }).forEach(it -> ErrorMessage.complain(it.line,
                 "variable " + it.name + " is already defined in method main(String[])"));
 
-        n.f14.accept(this, ns);
+        if (dupv.isEmpty())
+            n.f14.accept(this, ns);
+
         // Skip `( Statement() )*`
     }
 
@@ -91,22 +97,28 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
         s.add(id, n, ns);
 
         // distinct(id1,...,idf)
-        TypeCheckHelper.variableDistinct(n.f3).stream().map(d -> new Object() {
+        List<Identifier> dupv = TypeCheckHelper.variableDistinct(n.f3);
+        dupv.stream().map(d -> new Object() {
             int line = TypeCheckHelper.identifierLine(d);
             String name = TypeCheckHelper.identifierName(d);
         }).forEach(it -> ErrorMessage.complain(it.line,
                 "variable " + it.name + " is already defined in class " + id.toString()));
 
         // distinct(methodname(m1),...methodname(mk))
-        TypeCheckHelper.methodDistinct(n.f4).stream().map(d -> new Object() {
+        List<Identifier> dupm = TypeCheckHelper.methodDistinct(n.f4);
+        dupm.stream().map(d -> new Object() {
             int line = TypeCheckHelper.identifierLine(d);
             String name = TypeCheckHelper.identifierName(d);
         }).forEach(it -> ErrorMessage.complain(it.line,
                 "method " + it.name + " is already defined in class " +
                         id.toString() + " (overloading is not allowed)"));
 
-        n.f3.accept(this, ns);
-        n.f4.accept(this, ns);
+        if (dupv.isEmpty()) {
+            n.f3.accept(this, ns);
+
+            if (dupm.isEmpty())
+                n.f4.accept(this, ns);
+        }
     }
 
     /*
@@ -133,22 +145,28 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
             s.add(id, n, ns);
 
             // distinct(id1,...,idf)
-            TypeCheckHelper.variableDistinct(n.f5).stream().map(d -> new Object() {
+            List<Identifier> dupv = TypeCheckHelper.variableDistinct(n.f5);
+            dupv.stream().map(d -> new Object() {
                 int line = TypeCheckHelper.identifierLine(d);
                 String name = TypeCheckHelper.identifierName(d);
             }).forEach(it -> ErrorMessage.complain(it.line,
                     "variable " + it.name + " is already defined in class " + id.toString()));
 
             // distinct(methodname(m1),...methodname(mk))
-            TypeCheckHelper.methodDistinct(n.f6).stream().map(d -> new Object() {
+            List<Identifier> dupm = TypeCheckHelper.methodDistinct(n.f6);
+            dupm.stream().map(d -> new Object() {
                 int line = TypeCheckHelper.identifierLine(d);
                 String name = TypeCheckHelper.identifierName(d);
             }).forEach(it -> ErrorMessage.complain(it.line,
                     "method " + it.name + " is already defined in class " +
                             id.toString() + " (overloading is not allowed)"));
 
-            n.f5.accept(this, ns);
-            n.f6.accept(this, ns);
+            if (dupv.isEmpty()) {
+                n.f5.accept(this, ns);
+
+                if (dupm.isEmpty())
+                    n.f6.accept(this, ns);
+            }
         } else {
             ErrorMessage.complain(TypeCheckHelper.identifierLine(n.f3),
                     "cannot find symbol: class " + TypeCheckHelper.identifierName(n.f3));
@@ -173,7 +191,7 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
     @Override
     public void visit(MethodDeclaration n, Scope s) {
         Symbol id = Symbol.fromString(TypeCheckHelper.methodName(n));
-        Binder b = s.lookupParent(id);
+        Binder b = s.getParent().lookup(id);
         MethodType type = TypeCheckHelper.methodType(n);
 
         // Overloading check
@@ -197,21 +215,27 @@ public class FirstPhaseVisitor extends GJVoidDepthFirst<Scope> {
 
         if (n.f4.present()) {
             // distinct(idf1,...,idfn)
-            TypeCheckHelper.parameterDistinct((FormalParameterList) n.f4.node).stream().map(d -> new Object() {
+            List<Identifier> dupp = TypeCheckHelper.parameterDistinct((FormalParameterList) n.f4.node);
+            dupp.stream().map(d -> new Object() {
                 int line = TypeCheckHelper.identifierLine(d);
                 String name = TypeCheckHelper.identifierName(d);
             }).forEach(it -> ErrorMessage.complain(it.line,
                     "parameter " + it.name + " is already defined in method " + id.toString()));
 
-            n.f4.accept(this, ns);
+            if (dupp.isEmpty())
+                n.f4.accept(this, ns);
         }
 
         // distinct(id1,...,idr)
-        TypeCheckHelper.variableDistinct(n.f7).stream().map(d -> new Object() {
+        List<Identifier> dupv = TypeCheckHelper.variableDistinct(n.f7);
+        dupv.stream().map(d -> new Object() {
             int line = TypeCheckHelper.identifierLine(d);
             String name = TypeCheckHelper.identifierName(d);
         }).forEach(it -> ErrorMessage.complain(it.line,
                 "variable " + it.name + " is already defined in method " + id.toString() + type.getSignature()));
+
+        if (dupv.isEmpty())
+            n.f7.accept(this, ns);
     }
 
     /*
