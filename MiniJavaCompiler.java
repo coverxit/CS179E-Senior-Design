@@ -81,7 +81,9 @@ public class MiniJavaCompiler {
                 // Phase 1-2: Type Checking (second pass)
                 minijava.accept(new SecondPhaseVisitor(), env);
 
-                if (!ErrorMessage.hasErrors()) {
+                if (ErrorMessage.hasErrors()) {
+                    ErrorMessage.printErrors(System.err);
+                } else {
                     // Phase 2: Intermediate Code Generation
                     ByteArrayOutputStream vapor = new ByteArrayOutputStream();
                     minijava.accept(new CodeGenVisitor(), new CodeGenPair(env, new Translator(new PrintStream(vapor))));
