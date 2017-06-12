@@ -23,6 +23,12 @@ public class MiniJavaCompiler {
         HelpFormatter formatter = new HelpFormatter();
         formatter.setOptionComparator(null);
         formatter.printHelp("minijavac [options] <source files>", options);
+        System.out.println();
+    }
+
+    private static void printUsage() {
+        System.out.println("usage: minijavac [options] <source files>");
+        System.out.println("use -h for a list of possible options");
         System.exit(1);
     }
 
@@ -117,18 +123,22 @@ public class MiniJavaCompiler {
                 "Run the register allocation stage, producing a VaporM code file.");
         options.addOption("asm", "assembly", false,
                 "(Default) Run the instruction selection stage, producing a MIPS assembly file.");
+        options.addOption("h", "help", false, "Print a synopsis of standard options.");
 
         try {
             CommandLine cmd = new DefaultParser().parse(options, args);
             List<String> files = cmd.getArgList();
 
+            if (cmd.hasOption("h"))
+                printHelp(options);
+
             if (files.isEmpty()) {
                 printMessage("no source files");
-                printHelp(options);
+                printUsage();
             } else {
                 files.stream().filter(f -> !new File(f).isFile()).findFirst().ifPresent(f -> {
                     printMessage("file not found: " + f);
-                    printHelp(options);
+                    printUsage();
                 });
 
                 // Trick for fixing the ReInit requirement
